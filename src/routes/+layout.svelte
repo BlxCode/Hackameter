@@ -1,12 +1,15 @@
 <script>
 	import './layout.css';
-	import favicon from '#lib/assets/favicon.svg';
+	import STONKS from '#lib/assets/STONKS.png';
 
 	let { children } = $props();
 </script>
 
 <svelte:head>
-	<link rel="icon" href={favicon} />
+	<link rel="icon" href={STONKS} />
 </svelte:head>
+<svelte:body />
+
+	
 
 {@render children()}
