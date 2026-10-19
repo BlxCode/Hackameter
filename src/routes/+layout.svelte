@@ -7,6 +7,7 @@
 
 <svelte:head>
 	<link rel="icon" href={STONKS} />
+	<title>HackaMeter</title>
 </svelte:head>
 <svelte:body />
 
