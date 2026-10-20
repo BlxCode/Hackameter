@@ -7,7 +7,6 @@
     redirectUrl = window.location.origin;
   });
 
-  console.log(HACKATIME_UID, redirectUrl);
 </script>
 
 <header class="container">

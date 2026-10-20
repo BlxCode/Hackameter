@@ -1,1 +1,0 @@
-// this should be run seperatly, and like on a server.
