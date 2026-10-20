@@ -8,8 +8,14 @@
   import { onMount } from "svelte";
   let currentUrl = $state();
   onMount(() => {
+    localStorage.getItem("alreadyConnectedCodes") || localStorage.setItem("alreadyConnectedCodes","[]");
+    let alreadyConnectedCodes = JSON.parse(localStorage.getItem("alreadyConnectedCodes"));
     currentUrl = window.location.href;
+    if(currentUrl.includes("code=") && alreadyConnectedCodes.includes(currentUrl.split("code=")[1].split("&")[0])){
+      window.location.href = "https://hackameter.blxm.me";
+    }
     if (currentUrl.includes("code=")) {
+
       const code = currentUrl.split("code=")[1].split("&")[0];
       const msg = {
         code: code,
@@ -25,6 +31,8 @@
       socket.on("auth_response", (data) => {
         console.log("Received auth_response:", data);
         if (data.success) {
+          alreadyConnectedCodes.push(code);
+          localStorage.setItem("alreadyConnectedCodes", JSON.stringify(alreadyConnectedCodes));
          console.log("Successfully authenticated with HackaTime. Redirecting to portal...");
         } else {
           alert(

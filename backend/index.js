@@ -1,4 +1,5 @@
 import { Server } from "socket.io";
+import 'dotenv/config'
 
 const io = new Server({
   path: "/hackameter",
@@ -13,6 +14,8 @@ io.on("connection", (socket) => {
   currUsers++;
   console.log("current users:", currUsers);
 
+
+  // auth coming in from client handeling
   socket.on("auth", (msg) => {
     console.log("Received auth message:", msg);
 
