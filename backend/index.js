@@ -8,6 +8,8 @@ const io = new Server({
       "http://localhost:5173",
       "http://localhost:5174",
       "https://hackameter.blxm.me",
+      "https://hackameter-git-main-blxcodes-projects.vercel.app/",
+      "https://hackameter.vercel.app/",
     ],
   },
 });

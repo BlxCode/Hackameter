@@ -10,7 +10,7 @@
     let websocketAddress = window.location.href.includes("localhost")
       ? "http://localhost:3068"
       : "https://test-api.blxm.me";
-    const socket = io(websocketAddress, { path: "/hackameter" });
+    const socket = io(websocketAddress, { path: "/hackameter" }) || alert("Error connecting to server. Please try again, and if the problem persists, dm me on slack or smth.");
 
     localStorage.getItem("code") || localStorage.setItem("code", "");
     localStorage.getItem("alreadyConnectedCodes") ||
