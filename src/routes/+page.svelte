@@ -1,12 +1,18 @@
 <script>
   import STONKS from "#lib/assets/STONKS.png";
+  	import { writable } from 'svelte/store';
+
   const HACKATIME_UID = import.meta.env.VITE_HACKATIME_UID;
   import { onMount } from "svelte";
   let redirectUrl = $state();
+  let buttonText = writable("Log in with HackaTime");
+
   onMount(() => {
     redirectUrl = window.location.origin;
+    if (localStorage.getItem("code") && localStorage.getItem("code") != "") {
+      buttonText.set("Continue to portal");
+    }
   });
-
 </script>
 
 <header class="container">
@@ -22,7 +28,7 @@
   <a
     href="https://hackatime.hackclub.com/oauth/authorize?client_id={HACKATIME_UID}&redirect_uri={redirectUrl ||
       'https://hackameter.blxm.me'}%2Fportal&response_type=code&scope=profile+read"
-    ><button class="primary">Login with HackaTime</button></a
+    ><button class="primary">{$buttonText}</button></a
   ><br /><br />
 </header>
 

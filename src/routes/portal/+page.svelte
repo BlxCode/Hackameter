@@ -1,39 +1,62 @@
 <script>
   import STONKS from "#lib/assets/STONKS.png";
   import { io } from "socket.io-client";
-
+  import Dashboard from "#lib/dashboardComponents/main.svelte";
   const HACKATIME_UID = import.meta.env.VITE_HACKATIME_UID;
-  const socket = io("ws://localhost:3000", { path: "/hackameter" });
-
+  let dashboardHidden = $state(true);
   import { onMount } from "svelte";
   let currentUrl = $state();
   onMount(() => {
-    localStorage.getItem("alreadyConnectedCodes") || localStorage.setItem("alreadyConnectedCodes","[]");
-    let alreadyConnectedCodes = JSON.parse(localStorage.getItem("alreadyConnectedCodes"));
+    let websocketAddress = window.location.href.includes("localhost")
+      ? "http://localhost:3068"
+      : "https://hackameter.blxm.me/hackameter";
+    const socket = io(websocketAddress, { path: "/hackameter" });
+
+    localStorage.getItem("code") || localStorage.setItem("code", "");
+    localStorage.getItem("alreadyConnectedCodes") ||
+      localStorage.setItem("alreadyConnectedCodes", "[]");
+    let alreadyConnectedCodes = JSON.parse(
+      localStorage.getItem("alreadyConnectedCodes"),
+    );
     currentUrl = window.location.href;
-    if(currentUrl.includes("code=") && alreadyConnectedCodes.includes(currentUrl.split("code=")[1].split("&")[0])){
+    // if user dosnt have code and first time in this site
+    if (
+      currentUrl.includes("code=") &&
+      alreadyConnectedCodes.includes(currentUrl.split("code=")[1].split("&")[0])
+    ) {
       window.location.href = "https://hackameter.blxm.me";
     }
-    if (currentUrl.includes("code=")) {
-
+    // if user has code and first time in this site
+    else if (currentUrl.includes("code=")) {
       const code = currentUrl.split("code=")[1].split("&")[0];
+      localStorage.setItem("code", code);
       const msg = {
         code: code,
         type: "authorization_code",
         uri: `${window.location.origin}/portal`,
       };
-      try{
+      try {
         socket.emit("auth", msg);
       } catch (error) {
-        alert("Error emitting auth event: " + error+". Please try again, and if the problem persists, dm me on slack or smth.");
+        alert(
+          "Error emitting auth event: " +
+            error +
+            ". Please try again, and if the problem persists, dm me on slack or smth.",
+        );
       }
 
       socket.on("auth_response", (data) => {
         console.log("Received auth_response:", data);
         if (data.success) {
           alreadyConnectedCodes.push(code);
-          localStorage.setItem("alreadyConnectedCodes", JSON.stringify(alreadyConnectedCodes));
-         console.log("Successfully authenticated with HackaTime. Redirecting to portal...");
+          localStorage.setItem(
+            "alreadyConnectedCodes",
+            JSON.stringify(alreadyConnectedCodes),
+          );
+          console.log(
+            "Successfully authenticated with HackaTime. Redirecting to portal...",
+          );
+          dashboardHidden = false;
         } else {
           alert(
             "An error occurred: " +
@@ -43,7 +66,9 @@
           window.location.href = "https://hackameter.blxm.me";
         }
       });
-    } else if (currentUrl.includes("error=")) {
+    }
+    // if user denied access to the app
+    else if (currentUrl.includes("error=")) {
       const error = currentUrl.split("error=")[1].split("&")[0];
       console.log(error);
       if (error === "access_denied") {
@@ -56,13 +81,37 @@
             ". Please try again, and if the problem persists, dm me on slack or smth.",
         );
       }
-    } else {
-      window.location.href = "https://hackameter.blxm.me";
+    }
+    // if user has no code but has already connected before
+    else if (!currentUrl.includes("code")) {
+      if (localStorage.getItem("code") && localStorage.getItem("code") != "") {
+        const code = localStorage.getItem("code");
+        const msg = {
+          code: code,
+          type: "authorization_code",
+          uri: `${window.location.origin}/portal`,
+        };
+        try {
+          socket.emit("auth", msg);
+        } catch (error) {
+          alert(
+            "Error emitting auth event: " +
+              error +
+              ". Please try again, and if the problem persists, dm me on slack or smth.",
+          );
+        }
+      } else {
+        // no code in local storage, redirect to main page
+        alert(
+          "No code found in local storage. And program is running for the first time, but no code is available. Redirecting to main page...",
+        );
+        window.location.href = "https://hackameter.blxm.me";
+      }
     }
   });
 </script>
 
-<header class="container">
+<header hidden={!dashboardHidden} class="container">
   <div id="spinner-container" data-tooltip="Loading...">
     <svg id="spinner" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640"
       ><!--!Font Awesome Free v7.3.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2026 Fonticons, Inc.--><path
@@ -71,6 +120,9 @@
     >
   </div>
 </header>
+<main hidden={dashboardHidden}>
+  <Dashboard />
+</main>
 
 <style>
   @keyframes rotate-arc {
@@ -106,7 +158,7 @@
     height: 100vh;
     top: 50%;
     left: 50%;
-    transform: translate(-50%, -50%);
+    transform: translate(-50%, -50%) scale(1.01);
   }
   h1 {
     font-size: 5rem;

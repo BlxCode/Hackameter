@@ -1,0 +1,17 @@
+{
+  "name": "hackameter-backend",
+  "version": "1.0.0",
+  "description": "this is the backend for the hackameter project, this npm package.json should ONLY be used if you are running the backend server standalone, otherwise use the package.json in the root of the project",
+  "license": "ISC",
+  "author": "blxcode",
+  "private": true,
+  "type": "module",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "dependencies": {
+    "dotenv": "^18.0.8",
+    "socket.io": "^4.8.4"
+  }
+}
