@@ -2,9 +2,13 @@ import { Server } from "socket.io";
 import "dotenv/config";
 console.log("Starting server...");
 const io = new Server({
-  path: "/hackameter",
+  path: "/hackameter/",
   cors: {
-    origin: ["http://localhost:5173", "http://localhost:5174","https://hackameter.blxm.me"],
+    origin: [
+      "http://localhost:5173",
+      "http://localhost:5174",
+      "https://hackameter.blxm.me",
+    ],
   },
 });
 let currUsers = 0;
@@ -17,7 +21,7 @@ io.on("connection", (socket) => {
   // auth coming in from client handeling
   socket.on("auth", (msg) => {
     console.log("Received auth message:", msg);
-
+    console.log("Using client_id:", process.env.HACKATIME_UID);
     fetch("https://hackatime.hackclub.com/oauth/token", {
       method: "POST",
       headers: {
@@ -34,7 +38,7 @@ io.on("connection", (socket) => {
       .then((response) => response.json())
       .then((data) => {
         if (data.error) {
-          console.error("Error in response from HackaTime:", data.error);
+          console.error("Error in response from HackaTime:", data);
           socket.emit("auth_response", { error: data.error, success: false });
         } else {
           console.log("Received data from HackaTime:", data);
@@ -67,7 +71,6 @@ io.on("connection", (socket) => {
       });
       return;
     }
-
   });
 
   socket.on("disconnect", () => {
