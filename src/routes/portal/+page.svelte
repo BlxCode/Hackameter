@@ -9,7 +9,7 @@
   onMount(() => {
     let websocketAddress = window.location.href.includes("localhost")
       ? "http://localhost:3068"
-      : "https://hackameter.blxm.me/hackameter";
+      : "https://test-api.blxm.me/hackameter";
     const socket = io(websocketAddress, { path: "/hackameter" });
 
     localStorage.getItem("code") || localStorage.setItem("code", "");
