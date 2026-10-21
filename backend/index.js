@@ -1,6 +1,6 @@
 import { Server } from "socket.io";
 import "dotenv/config";
-
+console.log("Starting server...");
 const io = new Server({
   path: "/hackameter",
   cors: {
@@ -77,4 +77,4 @@ io.on("connection", (socket) => {
   });
 });
 
-io.listen(3067);
+io.listen(3068);
