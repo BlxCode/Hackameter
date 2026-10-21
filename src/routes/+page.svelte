@@ -1,13 +1,19 @@
 <script>
   import STONKS from "#lib/assets/STONKS.png";
-  	import { writable } from 'svelte/store';
+  import { writable } from "svelte/store";
 
   const HACKATIME_UID = import.meta.env.VITE_HACKATIME_UID;
   import { onMount } from "svelte";
   let redirectUrl = $state();
   let buttonText = writable("Log in with HackaTime");
-
+  let linkUrl = $state();
+  let whenMounted = $state(false);
   onMount(() => {
+    setTimeout(() => {
+      whenMounted = true;
+    }, 500);
+    linkUrl = `https://hackatime.hackclub.com/oauth/authorize?client_id=${HACKATIME_UID}&redirect_uri=${redirectUrl || "https://hackameter.blxm.me"}%2Fportal&response_type=code&scope=profile+read`;
+
     redirectUrl = window.location.origin;
     if (localStorage.getItem("code") && localStorage.getItem("code") != "") {
       buttonText.set("Continue to portal");
@@ -25,10 +31,12 @@
       > extension
     </p>
   </hgroup>
-  <a
-    href="https://hackatime.hackclub.com/oauth/authorize?client_id={HACKATIME_UID}&redirect_uri={redirectUrl ||
-      'https://hackameter.blxm.me'}%2Fportal&response_type=code&scope=profile+read"
-    ><button class="primary">{$buttonText}</button></a
+  <a href={linkUrl}
+    ><button
+      disabled={!whenMounted}
+      aria-busy={!whenMounted}
+      class="primary">{$buttonText}</button
+    ></a
   ><br /><br />
 </header>
 
@@ -55,5 +63,32 @@
     padding: 1rem;
     padding-left: 2rem;
     padding-right: 2rem;
+  }
+  @keyframes rotate-arc {
+    to {
+      transform: translate(-50%, -50%) rotate(360deg);
+    }
+  }
+  * {
+    text-align: center;
+    font-family: "Segoe UI", "Roboto", "Helvetica Neue", Arial, sans-serif;
+  }
+  #spinner-container {
+    cursor: default;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 10rem;
+    height: 10rem;
+  }
+  #spinner {
+    width: 10rem;
+    height: 10rem;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    animation: rotate-arc 1.5s linear infinite;
   }
 </style>
