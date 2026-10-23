@@ -12,9 +12,10 @@
     setTimeout(() => {
       whenMounted = true;
     }, 500);
+    redirectUrl = window.location.origin;
+
     linkUrl = `https://hackatime.hackclub.com/oauth/authorize?client_id=${HACKATIME_UID}&redirect_uri=${redirectUrl || "https://hackameter.blxm.me"}%2Fportal&response_type=code&scope=profile+read`;
 
-    redirectUrl = window.location.origin;
     if (localStorage.getItem("code") && localStorage.getItem("code") != "") {
       buttonText.set("Continue to portal");
     }
@@ -32,10 +33,8 @@
     </p>
   </hgroup>
   <a href={linkUrl}
-    ><button
-      disabled={!whenMounted}
-      aria-busy={!whenMounted}
-      class="primary">{$buttonText}</button
+    ><button disabled={!whenMounted} aria-busy={!whenMounted} class="primary"
+      >{$buttonText}</button
     ></a
   ><br /><br />
 </header>

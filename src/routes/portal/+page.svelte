@@ -1,17 +1,12 @@
 <script>
   import STONKS from "#lib/assets/STONKS.png";
-  import { io } from "socket.io-client";
-  import Dashboard from "#lib/dashboardComponents/main.svelte";
+  import Dashboard, { socket } from "./main.svelte";
   const HACKATIME_UID = import.meta.env.VITE_HACKATIME_UID;
   let dashboardHidden = $state(true);
   import { onMount } from "svelte";
   let currentUrl = $state();
+  // init ig
   onMount(() => {
-    let websocketAddress = window.location.href.includes("localhost")
-      ? "http://localhost:3068"
-      : "https://test-api.blxm.me";
-    const socket = io("https://test-api.blxm.me", { path: "/hackameter" }) || alert("Error connecting to server. Please try again, and if the problem persists, dm me on slack or smth.");
-
     localStorage.getItem("code") || localStorage.setItem("code", "");
     localStorage.getItem("alreadyConnectedCodes") ||
       localStorage.setItem("alreadyConnectedCodes", "[]");

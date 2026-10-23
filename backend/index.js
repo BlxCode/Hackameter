@@ -16,14 +16,14 @@ const io = new Server({
 let currUsers = 0;
 io.on("connection", (socket) => {
   let accessToken = null;
+  let userId = null;
   console.log("a user connected", socket.id);
   currUsers++;
   console.log("current users:", currUsers);
 
   // auth coming in from client handeling
   socket.on("auth", (msg) => {
-    console.log("Received auth message:", msg);
-    console.log("Using client_id:", process.env.HACKATIME_UID);
+    console.log("Received auth message from :", socket.id);
     fetch("https://hackatime.hackclub.com/oauth/token", {
       method: "POST",
       headers: {
@@ -43,7 +43,6 @@ io.on("connection", (socket) => {
           console.error("Error in response from HackaTime:", data);
           socket.emit("auth_response", { error: data.error, success: false });
         } else {
-          console.log("Received data from HackaTime:", data);
           socket.emit("auth_response", { success: true });
           // IF SUCCESSFUL, STORE ACCESS TOKEN
           if (
@@ -52,6 +51,21 @@ io.on("connection", (socket) => {
             data.token_type == "Bearer"
           ) {
             data.access_token ? (accessToken = data.access_token) : null;
+            fetch("https://hackatime.hackclub.com/api/v1/authenticated/me", {
+              headers: {
+                Authorization: "Bearer " + accessToken,
+              },
+            })
+              .then((response) => response.json())
+              .then((data) => {
+                userId = data.id;
+              })
+              .catch((error) => {
+                console.error(
+                  "Error fetching user data from HackaTime:",
+                  error,
+                );
+              });
           }
         }
       })
@@ -72,6 +86,22 @@ io.on("connection", (socket) => {
         success: false,
       });
       return;
+    } else {
+      // where all the api requests are handled
+      fetch(msg.endpoint, {
+        body: JSON.stringify(msg.data),
+      })
+        .then((response) => response.json())
+        .then((data) => {
+          socket.emit("api_response", { data, success: true });
+        })
+        .catch((error) => {
+          console.error("Error fetching API data:", error);
+          socket.emit("api_response", {
+            error: "Failed to fetch API data",
+            success: false,
+          });
+        });
     }
   });
 
