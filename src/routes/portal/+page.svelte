@@ -59,6 +59,9 @@
           );
           dashboardHidden = false;
           localStorage.setItem("loginToken", data.loginToken);
+           window.location.href = dev
+        ? "http://localhost:5173/portal"
+        : "https://hackameter.blxm.me/portal";
         } else {
           if (data.error == "invalid_grant") {
             console.error(

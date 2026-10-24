@@ -11,7 +11,7 @@ const sixtyDaysAgo = new Date(Date.now() - 60 * 24 * 60 * 60 * 1000); // 60 days
 for (const userId of Object.keys(hackatimeTokens)) {
   const tokenData = hackatimeTokens[userId];
   const timestamp = tokenData.timestamp;
-  if (Date().now() - sixtyDaysAgo > timestamp) {
+  if (Date.now() - sixtyDaysAgo > timestamp) {
     // delete the old token
     delete hackatimeTokens[userId];
   }
