@@ -6,15 +6,28 @@
   import { onMount } from "svelte";
   let currentUrl = $state();
   import { dev } from "$app/env";
-
+  let isConnected = $state(socket.connected);
   // init ig
   onMount(() => {
-   
+    setTimeout(() => {
+      isConnected = socket.connected;
+      if (!isConnected) {
+        console.error(
+          "Socket connection failed. Please check your internet connection or try again later.",
+        );
+        alert(
+          "Server connection failed. Please check your internet connection or try again later.",
+        );
+      }
+    }, 5000);
     currentUrl = window.location.href;
     // if user dosnt have code and first time in this site
-    if (
-      !currentUrl.includes("code=")
-    ) {
+    if (localStorage.getItem("loginToken")) {
+      socket.emit("auth", { loginToken: localStorage.getItem("loginToken") });
+      socket.on("auth_response", (data) => {
+        dashboardHidden = false;
+      });
+    } else if (!currentUrl.includes("code=")) {
       window.location.href = dev
         ? "http://localhost:5173"
         : "https://hackameter.blxm.me";
@@ -26,6 +39,7 @@
         code: code,
         type: "authorization_code",
         uri: `${window.location.origin}/portal`,
+        loginToken: null,
       };
       try {
         socket.emit("auth", msg);
@@ -40,14 +54,25 @@
       socket.on("auth_response", (data) => {
         console.log("Received auth_response:", data);
         if (data.success) {
-         
           console.log(
             "Successfully authenticated with HackaTime. Redirecting to portal...",
           );
           dashboardHidden = false;
+          localStorage.setItem("loginToken", data.loginToken);
         } else {
-          if(data.error == "invalid_grant"){
-            console.error("Invalid grant error: The authorization code is invalid, already used or has expired. Relogin to HackaTime to get a new code.");
+          if (data.error == "invalid_grant") {
+            console.error(
+              "Invalid grant error: The authorization code is invalid, already used or has expired. Relogin to HackaTime to get a new code.",
+            );
+            window.location.href = dev
+              ? "http://localhost:5173"
+              : "https://hackameter.blxm.me";
+            return;
+          }
+          if (data.error == "Invalid login token") {
+            localStorage.removeItem("loginToken");
+            alert("Invalid login token. Please try logging in again.");
+
             window.location.href = dev
               ? "http://localhost:5173"
               : "https://hackameter.blxm.me";
@@ -59,8 +84,8 @@
               ". Please try again, and if the problem persists, dm me on slack or smth.",
           );
           window.location.href = dev
-        ? "http://localhost:5173"
-        : "https://hackameter.blxm.me";
+            ? "http://localhost:5173"
+            : "https://hackameter.blxm.me";
         }
       });
     }
@@ -81,7 +106,6 @@
         );
       }
     }
-   
   });
 </script>
 

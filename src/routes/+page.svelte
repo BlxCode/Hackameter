@@ -13,8 +13,12 @@
       whenMounted = true;
     }, 500);
     redirectUrl = window.location.origin;
+    if(localStorage.getItem("loginToken")){
+          linkUrl = `${redirectUrl || "https://hackameter.blxm.me"}/portal`;
 
+    } else {
     linkUrl = `https://hackatime.hackclub.com/oauth/authorize?client_id=${HACKATIME_UID}&redirect_uri=${redirectUrl || "https://hackameter.blxm.me"}%2Fportal&response_type=code&scope=profile+read`;
+    }
 
   
   });
