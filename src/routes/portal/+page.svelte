@@ -5,26 +5,23 @@
   let dashboardHidden = $state(true);
   import { onMount } from "svelte";
   let currentUrl = $state();
+  import { dev } from "$app/env";
+
   // init ig
   onMount(() => {
-    localStorage.getItem("code") || localStorage.setItem("code", "");
-    localStorage.getItem("alreadyConnectedCodes") ||
-      localStorage.setItem("alreadyConnectedCodes", "[]");
-    let alreadyConnectedCodes = JSON.parse(
-      localStorage.getItem("alreadyConnectedCodes"),
-    );
+   
     currentUrl = window.location.href;
     // if user dosnt have code and first time in this site
     if (
-      currentUrl.includes("code=") &&
-      alreadyConnectedCodes.includes(currentUrl.split("code=")[1].split("&")[0])
+      !currentUrl.includes("code=")
     ) {
-      window.location.href = "https://hackameter.blxm.me";
+      window.location.href = dev
+        ? "http://localhost:5173"
+        : "https://hackameter.blxm.me";
     }
     // if user has code and first time in this site
     else if (currentUrl.includes("code=")) {
       const code = currentUrl.split("code=")[1].split("&")[0];
-      localStorage.setItem("code", code);
       const msg = {
         code: code,
         type: "authorization_code",
@@ -43,22 +40,27 @@
       socket.on("auth_response", (data) => {
         console.log("Received auth_response:", data);
         if (data.success) {
-          alreadyConnectedCodes.push(code);
-          localStorage.setItem(
-            "alreadyConnectedCodes",
-            JSON.stringify(alreadyConnectedCodes),
-          );
+         
           console.log(
             "Successfully authenticated with HackaTime. Redirecting to portal...",
           );
           dashboardHidden = false;
         } else {
+          if(data.error == "invalid_grant"){
+            console.error("Invalid grant error: The authorization code is invalid, already used or has expired. Relogin to HackaTime to get a new code.");
+            window.location.href = dev
+              ? "http://localhost:5173"
+              : "https://hackameter.blxm.me";
+            return;
+          }
           alert(
             "An error occurred: " +
               data.error +
               ". Please try again, and if the problem persists, dm me on slack or smth.",
           );
-          window.location.href = "https://hackameter.blxm.me";
+          window.location.href = dev
+        ? "http://localhost:5173"
+        : "https://hackameter.blxm.me";
         }
       });
     }
@@ -68,7 +70,9 @@
       console.log(error);
       if (error === "access_denied") {
         alert("seriously bro? you denied access to the app? smh");
-        window.location.href = "https://hackameter.blxm.me";
+        window.location.href = dev
+          ? "http://localhost:5173"
+          : "https://hackameter.blxm.me";
       } else {
         alert(
           "An error occurred: " +
@@ -77,32 +81,7 @@
         );
       }
     }
-    // if user has no code but has already connected before
-    else if (!currentUrl.includes("code")) {
-      if (localStorage.getItem("code") && localStorage.getItem("code") != "") {
-        const code = localStorage.getItem("code");
-        const msg = {
-          code: code,
-          type: "authorization_code",
-          uri: `${window.location.origin}/portal`,
-        };
-        try {
-          socket.emit("auth", msg);
-        } catch (error) {
-          alert(
-            "Error emitting auth event: " +
-              error +
-              ". Please try again, and if the problem persists, dm me on slack or smth.",
-          );
-        }
-      } else {
-        // no code in local storage, redirect to main page
-        alert(
-          "No code found in local storage. And program is running for the first time, but no code is available. Redirecting to main page...",
-        );
-        window.location.href = "https://hackameter.blxm.me";
-      }
-    }
+   
   });
 </script>
 
@@ -115,6 +94,7 @@
     >
   </div>
 </header>
+
 <main hidden={dashboardHidden}>
   <Dashboard />
 </main>

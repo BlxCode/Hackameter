@@ -59,6 +59,7 @@ io.on("connection", (socket) => {
               .then((response) => response.json())
               .then((data) => {
                 userId = data.id;
+                console.log("User authenticated:", data);
               })
               .catch((error) => {
                 console.error(

@@ -5,7 +5,7 @@
   const HACKATIME_UID = import.meta.env.VITE_HACKATIME_UID;
   import { onMount } from "svelte";
   let redirectUrl = $state();
-  let buttonText = writable("Log in with HackaTime");
+  let buttonText = writable("Enter HackaMeter");
   let linkUrl = $state();
   let whenMounted = $state(false);
   onMount(() => {
@@ -16,9 +16,7 @@
 
     linkUrl = `https://hackatime.hackclub.com/oauth/authorize?client_id=${HACKATIME_UID}&redirect_uri=${redirectUrl || "https://hackameter.blxm.me"}%2Fportal&response_type=code&scope=profile+read`;
 
-    if (localStorage.getItem("code") && localStorage.getItem("code") != "") {
-      buttonText.set("Continue to portal");
-    }
+  
   });
 </script>
 
@@ -40,10 +38,7 @@
 </header>
 
 <style>
-  * {
-    text-align: center;
-    font-family: "Segoe UI", "Roboto", "Helvetica Neue", Arial, sans-serif;
-  }
+ 
   header {
     position: fixed;
     top: 50%;

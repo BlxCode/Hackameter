@@ -12,5 +12,10 @@
 <svelte:body />
 
 	
-
+<style>
+	 * {
+    text-align: center;
+    font-family: "Segoe UI", "Roboto", "Helvetica Neue", Arial, sans-serif;
+  }
+</style>
 {@render children()}
