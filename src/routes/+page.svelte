@@ -1,9 +1,9 @@
 <script>
   import STONKS from "#lib/assets/STONKS.png";
   import { writable } from "svelte/store";
+  import { onMount } from "svelte";
 
   const HACKATIME_UID = import.meta.env.VITE_HACKATIME_UID;
-  import { onMount } from "svelte";
   let redirectUrl = $state();
   let buttonText = writable("Enter HackaMeter");
   let linkUrl = $state();
@@ -13,14 +13,11 @@
       whenMounted = true;
     }, 500);
     redirectUrl = window.location.origin;
-    if(localStorage.getItem("loginToken")){
-          linkUrl = `${redirectUrl || "https://hackameter.blxm.me"}/portal`;
-
+    if (localStorage.getItem("loginToken")) {
+      linkUrl = `${redirectUrl || "https://hackameter.blxm.me"}/portal`;
     } else {
-    linkUrl = `https://hackatime.hackclub.com/oauth/authorize?client_id=${HACKATIME_UID}&redirect_uri=${redirectUrl || "https://hackameter.blxm.me"}%2Fportal&response_type=code&scope=profile+read`;
+      linkUrl = `https://hackatime.hackclub.com/oauth/authorize?client_id=${HACKATIME_UID}&redirect_uri=${redirectUrl || "https://hackameter.blxm.me"}%2Fportal&response_type=code&scope=profile+read`;
     }
-
-  
   });
 </script>
 
@@ -38,11 +35,18 @@
     ><button disabled={!whenMounted} aria-busy={!whenMounted} class="primary"
       >{$buttonText}</button
     ></a
-  ><br /><br />
+  >
+  <a
+    href="https://hackclub.enterprise.slack.com/archives/C0CBY1UKFK6"
+    target="_blank"
+    rel="noopener noreferrer"
+  >
+    <button class="secondary">Slack Channel</button>
+  </a>
+  <br /><br />
 </header>
 
 <style>
- 
   header {
     position: fixed;
     top: 50%;
@@ -69,7 +73,6 @@
   }
   * {
     text-align: center;
-    font-family: "Segoe UI", "Roboto", "Helvetica Neue", Arial, sans-serif;
   }
   #spinner-container {
     cursor: default;

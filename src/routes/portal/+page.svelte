@@ -6,6 +6,7 @@
   import { onMount } from "svelte";
   let currentUrl = $state();
   import { dev } from "$app/env";
+
   let isConnected = $state(socket.connected);
   // init ig
   onMount(() => {

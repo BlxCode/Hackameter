@@ -8,7 +8,6 @@
 
 <style>
     nav {
-        background-color: #181A1C;
         padding: 1rem;
         color: white;
         font-family: "Segoe UI", "Roboto", "Helvetica Neue", Arial, sans-serif;

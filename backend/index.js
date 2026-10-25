@@ -43,7 +43,6 @@ io.on("connection", (socket) => {
     console.log("Received auth message from :", socket.id);
     // my way
     if (msg.loginToken != null && msg.loginToken != undefined) {
-      
       // if login token is present, decrypt it and check if it is valid
       const decryptedToken = decryptToken(msg.loginToken);
       const [userIdFromToken, emailFromToken] = decryptedToken.split(":");
@@ -109,27 +108,25 @@ io.on("connection", (socket) => {
                 .then((data) => {
                   if (data) {
                     userId = data.id;
-                   
-                     loginToken = encryptToken(
-                      userId + ":" + data.emails[0],
-                    );
-                    if(loginToken){
-                    hackatimeTokens[userId] = {
-                      userId: userId,
-                      loginToken: loginToken,
-                      hackatimeToken: encryptToken(accessToken),
-                      timestamp: Date.now(),
-                    };
-                    socket.emit("auth_response", {
-                      success: true,
-                      loginToken: loginToken,
-                    });
 
-                    fs.writeFileSync(
-                      "tokens.json",
-                      JSON.stringify(hackatimeTokens, null, 2),
-                    );
-                  }
+                    loginToken = encryptToken(userId + ":" + data.emails[0]);
+                    if (loginToken) {
+                      hackatimeTokens[userId] = {
+                        userId: userId,
+                        loginToken: loginToken,
+                        hackatimeToken: encryptToken(accessToken),
+                        timestamp: Date.now(),
+                      };
+                      socket.emit("auth_response", {
+                        success: true,
+                        loginToken: loginToken,
+                      });
+
+                      fs.writeFileSync(
+                        "tokens.json",
+                        JSON.stringify(hackatimeTokens, null, 2),
+                      );
+                    }
                   } else {
                     if (data.error) {
                       console.error("Error in response from HackaTime:", data);
@@ -182,12 +179,19 @@ io.on("connection", (socket) => {
       return;
     } else {
       // where all the api requests are handled
+      let endpoint = msg.endpoint;
+      // special cases for special endpoints
+      if(endpoint.includes("{YOUR_SECRET_TOKEN}")){
+        endpoint = endpoint.replace("{YOUR_SECRET_TOKEN}", accessToken);
+      }
       fetch("https://hackatime.hackclub.com/api/v1/" + msg.endpoint, {
-        body: JSON.stringify(msg.data),
+        headers: {
+          Authorization: "Bearer " + accessToken,
+        },
       })
         .then((response) => response.json())
         .then((data) => {
-          socket.emit("api_response", { data, success: true });
+          socket.emit("api_response", { data, success: true, id: msg.id });
         })
         .catch((error) => {
           console.error("Error fetching API data:", error);

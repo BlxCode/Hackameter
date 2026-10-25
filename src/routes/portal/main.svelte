@@ -5,6 +5,11 @@
   import Sidebar from "./sidebar.svelte";
   import Header from "./header.svelte";
   import Dashboard from "./dashboard.svelte";
+  let authenticated = $state(false);
+  export const hackatimeData = $state({
+    data: [],
+    apiRequests: [],
+  });
   // socket init
   console.log("Mounting socket connection...");
   let connected = $state(false);
@@ -18,39 +23,61 @@
         "Socket connection failed. Please check your internet connection or try again later.",
       );
       connected = false;
-   
     }
   }, 5000);
   socket.on("connect", () => {
     console.log("Connected to server via socket.io");
     connected = true;
   });
-
+// AUTHENTICATOR
   socket.on("auth_response", (data) => {
-    console.log("Received auth_response:", data);
     if (data.success) {
+      authenticated = true;
+
+      //make extra api requests
+      apiRequest("authenticated/me");
+    } else {
+      authenticated = false;
+      console.error("Authentication failed:", data.error);
     }
   });
 
   socket.on("disconnect", () => {
     console.log("Disconnected from server");
   });
+
+  // API
   socket.on("api_response", (response) => {
     if (response.success) {
+      hackatimeData.data[response.id] = response.data;
+      hackatimeData.apiRequests[response.id] = {
+        endpoint: response.endpoint,
+        status: "success",
+      };
       console.log("API request successful:", response.data);
-      resolve(response.data);
     } else {
-      reject(response.error);
+      console.error(response.error);
     }
   });
-  function apiRequest(endpoint, data) {
-    return new Promise((resolve, reject) => {
-      socket.emit("api_request", { endpoint, data });
-    });
+  let apiRequests = 0;
+  export function apiRequest(endpoint) {
+    if (authenticated) {
+      socket.emit("api_request", { endpoint: endpoint, id: apiRequests });
+      hackatimeData.apiRequests[apiRequests] = {
+        endpoint: endpoint,
+        status: "pending",
+      };
+      apiRequests++;
+
+      return apiRequests;
+    } else {
+      console.error("User is not authenticated. Cannot make API request.");
+    }
   }
 </script>
-<dialog style="z-index: 1000;" open = {!connected} id="dialog"  role="dialog">
- <strong>Server has failed to connect. Notes: {socket}</strong>
+
+<dialog style="z-index: 1000;" open={!connected} id="dialog" role="dialog">
+  <strong>Server has failed to connect. Notes: {socket}</strong>
 </dialog>
 <div id="portal-container">
   <header>
