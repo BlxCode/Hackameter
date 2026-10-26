@@ -2,6 +2,8 @@
   import { io } from "socket.io-client";
   console.log("Initializing socket connection...");
   import { dev } from "$app/env";
+  import { v4 as uuidv4 } from 'uuid';
+
   import Sidebar from "./sidebar.svelte";
   import Header from "./header.svelte";
   import Dashboard from "./dashboard.svelte";
@@ -29,7 +31,7 @@
     console.log("Connected to server via socket.io");
     connected = true;
   });
-// AUTHENTICATOR
+  // AUTHENTICATOR
   socket.on("auth_response", (data) => {
     if (data.success) {
       authenticated = true;
@@ -47,29 +49,32 @@
   });
 
   // API
-  socket.on("api_response", (response) => {
-    if (response.success) {
-      hackatimeData.data[response.id] = response.data;
-      hackatimeData.apiRequests[response.id] = {
-        endpoint: response.endpoint,
-        status: "success",
-      };
-      console.log("API request successful:", response.data);
-    } else {
-      console.error(response.error);
-    }
-  });
-  let apiRequests = 0;
   export function apiRequest(endpoint) {
+    const apiId = uuidv4();
+    console.log("Making API request to endpoint:", endpoint, "with ID:", apiId);
     if (authenticated) {
-      socket.emit("api_request", { endpoint: endpoint, id: apiRequests });
-      hackatimeData.apiRequests[apiRequests] = {
+      socket.emit("api_request", { endpoint: endpoint, id: apiId });
+      hackatimeData.apiRequests[apiId] = {
         endpoint: endpoint,
         status: "pending",
       };
-      apiRequests++;
-
-      return apiRequests;
+      socket.on("api_response" + apiId, (response) => {
+        if (response.success) {
+          hackatimeData.data[response.id] = response.data;
+          hackatimeData.apiRequests[response.id] = {
+            endpoint: response.endpoint,
+            status: "success",
+          };
+          console.log("API request successful:", response.data);
+        } else {
+          console.error(response.error);
+          hackatimeData.apiRequests[response.id] = {
+            endpoint: response.endpoint,
+            status: "error",
+          };
+        }
+      });
+      return apiId;
     } else {
       console.error("User is not authenticated. Cannot make API request.");
     }

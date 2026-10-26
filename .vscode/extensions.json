@@ -1,7 +1,5 @@
 {
 	"recommendations": [
-		"svelte.svelte-vscode",
-		"bradlc.vscode-tailwindcss",
-		"wallabyjs.quokka-vscode"
+		"svelte.svelte-vscode"
 	]
 }

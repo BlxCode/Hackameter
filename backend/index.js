@@ -181,9 +181,13 @@ io.on("connection", (socket) => {
       // where all the api requests are handled
       let endpoint = msg.endpoint;
       // special cases for special endpoints
-      if(endpoint.includes("{YOUR_SECRET_TOKEN}")){
+      if (endpoint.includes("{YOUR_SECRET_TOKEN}")) {
         endpoint = endpoint.replace("{YOUR_SECRET_TOKEN}", accessToken);
       }
+      if (endpoint.includes("{USER_ID}")) {
+        endpoint = endpoint.replace("{USER_ID}", userId);
+      }
+      console.log("Making API request to endpoint:", endpoint, "with ID:", msg.id);
       fetch("https://hackatime.hackclub.com/api/v1/" + msg.endpoint, {
         headers: {
           Authorization: "Bearer " + accessToken,
@@ -191,7 +195,7 @@ io.on("connection", (socket) => {
       })
         .then((response) => response.json())
         .then((data) => {
-          socket.emit("api_response", { data, success: true, id: msg.id });
+          socket.emit("api_response"+msg.id, { data, success: true, id: msg.id });
         })
         .catch((error) => {
           console.error("Error fetching API data:", error);

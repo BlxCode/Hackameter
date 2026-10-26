@@ -1,6 +1,6 @@
 <script>
-import { hackatimeData, apiRequest } from "./main.svelte";
-apiRequest("users/{id}?api_key={YOUR_SECRET_TOKEN}");
+import { hackatimeData, apiRequest, socket } from "./main.svelte";
+apiRequest("users/{USER_ID}?api_key={YOUR_SECRET_TOKEN}");
 let userName = $state("Blxm");
 </script>
 <div>
