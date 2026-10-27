@@ -4,7 +4,7 @@
 
   socket.on("auth_response", (data) => {
     if (data.success) {
-      apiRequest("users/{USER_ID}?api_key={WAKATIME_API_KEY}").then(
+      apiRequest("api/hackatime/v1/users/{USER_ID}?api_key={WAKATIME_API_KEY}",true).then(
         (apiId) => {
           console.log("API request sent with ID:", apiId);
           if (apiId) {
@@ -16,8 +16,6 @@
                 hackatimeData.apiRequests[apiId].error,
               );
             }
-          } else {
-            console.error("Failed to send API request. api id is " + apiId);
           }
         },
       );

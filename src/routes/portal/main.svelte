@@ -37,7 +37,7 @@
       authenticated = true;
 
       //make extra api requests
-      apiRequest("authenticated/me");
+      apiRequest("api/v1/authenticated/me");
     } else {
       authenticated = false;
       console.error("Authentication failed:", data.error);
@@ -49,11 +49,11 @@
   });
 
   // API
-  export async function apiRequest(endpoint) {
+  export async function apiRequest(endpoint, useWakatimeAuth = false) {
     const apiId = uuidv4();
     console.log("Making API request to endpoint:", endpoint, "with ID:", apiId);
     if (authenticated) {
-      socket.emit("api_request", { endpoint: endpoint, id: apiId });
+      socket.emit("api_request", { endpoint: endpoint, id: apiId, useWakatimeAuth: useWakatimeAuth });
       hackatimeData.apiRequests[apiId] = {
         endpoint: endpoint,
         status: "pending",
@@ -67,18 +67,27 @@
             status: "success",
           };
           console.log("API request successful:", response.id);
+          return apiId;
         } else {
-          console.error(response.error);
+          console.error(
+            response.error,
+            "API request failed for ID:",
+            response.id,
+          );
           hackatimeData.apiRequests[response.id] = {
             endpoint: response.endpoint,
             status: "error",
           };
+          return apiId;
         }
       });
-      return apiId;
     } else {
       console.error("User is not authenticated. Cannot make API request.");
-      return null;
+      hackatimeData.apiRequests[response.id] = {
+        endpoint: response.endpoint,
+        status: "error",
+      };
+      return apiId;
     }
   }
 </script>

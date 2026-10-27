@@ -35,6 +35,7 @@ io.on("connection", (socket) => {
   let accessToken = null;
   let loginToken = null;
   let userId = null;
+  let slackId = null;
   let wakatimeApiKey = null;
   console.log("a user connected", socket.id);
   currUsers++;
@@ -59,8 +60,6 @@ io.on("connection", (socket) => {
         console.log(
           "Successfully authenticated with Login Token. Redirecting to portal...",
         );
-
-       
       } else {
         console.error("Invalid login token provided.");
         socket.emit("auth_response", {
@@ -106,7 +105,7 @@ io.on("connection", (socket) => {
                 .then((data) => {
                   if (data) {
                     userId = data.id;
-
+                    slackId = data.slack_id;
                     loginToken = encryptToken(userId + ":" + data.emails[0]);
                     if (loginToken) {
                       hackatimeTokens[userId] = {
@@ -115,7 +114,6 @@ io.on("connection", (socket) => {
                         hackatimeToken: encryptToken(accessToken),
                         timestamp: Date.now(),
                       };
-                 
 
                       fs.writeFileSync(
                         "tokens.json",
@@ -160,8 +158,7 @@ io.on("connection", (socket) => {
             error: "Failed to fetch token",
             success: false,
           });
-                  return;
-
+          return;
         });
     }
     // get wakatime api key
@@ -174,10 +171,10 @@ io.on("connection", (socket) => {
       .then((data) => {
         if (data) {
           wakatimeApiKey = data.token;
-           socket.emit("auth_response", {
-          success: true,
-          loginToken: msg.loginToken,
-        });
+          socket.emit("auth_response", {
+            success: true,
+            loginToken: msg.loginToken,
+          });
         } else {
           console.error("No WakaTime API keys found for the user.");
         }
@@ -198,10 +195,13 @@ io.on("connection", (socket) => {
       // where all the api requests are handled
       let endpoint = msg.endpoint;
       // special cases for special endpoints
+      if (endpoint.includes("{SLACK_ID}")) {
+        endpoint = endpoint.replace("{SLACK_ID}", slackId);
+      }
       if (endpoint.includes("{YOUR_SECRET_TOKEN}")) {
         endpoint = endpoint.replace("{YOUR_SECRET_TOKEN}", accessToken);
       }
-      if(endpoint.includes("{WAKATIME_API_KEY}")) {
+      if (endpoint.includes("{WAKATIME_API_KEY}")) {
         endpoint = endpoint.replace("{WAKATIME_API_KEY}", wakatimeApiKey);
       }
       if (endpoint.includes("{USER_ID}")) {
@@ -213,9 +213,13 @@ io.on("connection", (socket) => {
         "with ID:",
         msg.id,
       );
-      fetch("https://hackatime.hackclub.com/api/v1/" + endpoint, {
+      console.log("Access Token:", accessToken);
+      console.log("fetching from: https://hackatime.hackclub.com/" + endpoint);
+      fetch("https://hackatime.hackclub.com/" + endpoint, {
         headers: {
-          Authorization: "Bearer " + accessToken,
+          Authorization: `Bearer ${
+            msg.useWakatimeAuth ? wakatimeApiKey : accessToken
+          }`,
         },
       })
         .then((response) => {
@@ -225,8 +229,11 @@ io.on("connection", (socket) => {
               success: false,
               id: msg.id,
             });
+            console.error(
+              `HTTP error! status: ${response.status}. full response:. ID: ${msg.id}`,
+            );
             throw new Error(
-              `HTTP error! status: ${response.status}. full response: ${response}. ID: ${msg.id}`,
+              `HTTP error! status: ${response.status}. full response:. ID: ${msg.id}`,
             );
           } else {
             return response.json();
