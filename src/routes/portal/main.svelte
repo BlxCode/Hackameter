@@ -2,7 +2,7 @@
   import { io } from "socket.io-client";
   console.log("Initializing socket connection...");
   import { dev } from "$app/env";
-  import { v4 as uuidv4 } from 'uuid';
+  import { v4 as uuidv4 } from "uuid";
 
   import Sidebar from "./sidebar.svelte";
   import Header from "./header.svelte";
@@ -49,7 +49,7 @@
   });
 
   // API
-  export function apiRequest(endpoint) {
+  export async function apiRequest(endpoint) {
     const apiId = uuidv4();
     console.log("Making API request to endpoint:", endpoint, "with ID:", apiId);
     if (authenticated) {
@@ -58,6 +58,7 @@
         endpoint: endpoint,
         status: "pending",
       };
+
       socket.on("api_response" + apiId, (response) => {
         if (response.success) {
           hackatimeData.data[response.id] = response.data;
@@ -65,7 +66,7 @@
             endpoint: response.endpoint,
             status: "success",
           };
-          console.log("API request successful:", response.data);
+          console.log("API request successful:", response.id);
         } else {
           console.error(response.error);
           hackatimeData.apiRequests[response.id] = {
@@ -77,6 +78,7 @@
       return apiId;
     } else {
       console.error("User is not authenticated. Cannot make API request.");
+      return null;
     }
   }
 </script>

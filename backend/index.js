@@ -8,6 +8,7 @@ const hackatimeTokensJson = fs.readFileSync("tokens.json", "utf8");
 const hackatimeTokens = JSON.parse(hackatimeTokensJson);
 const sixtyDaysAgo = new Date(Date.now() - 60 * 24 * 60 * 60 * 1000); // 60 days in milliseconds
 // delete old tokens after boot
+const hackameterApiToken = process.env.HACKATIME_SECRET;
 for (const userId of Object.keys(hackatimeTokens)) {
   const tokenData = hackatimeTokens[userId];
   const timestamp = tokenData.timestamp;
@@ -34,6 +35,7 @@ io.on("connection", (socket) => {
   let accessToken = null;
   let loginToken = null;
   let userId = null;
+  let wakatimeApiKey = null;
   console.log("a user connected", socket.id);
   currUsers++;
   console.log("current users:", currUsers);
@@ -58,11 +60,7 @@ io.on("connection", (socket) => {
           "Successfully authenticated with Login Token. Redirecting to portal...",
         );
 
-        socket.emit("auth_response", {
-          success: true,
-          loginToken: msg.loginToken,
-        });
-        return;
+       
       } else {
         console.error("Invalid login token provided.");
         socket.emit("auth_response", {
@@ -83,7 +81,7 @@ io.on("connection", (socket) => {
           code: msg.code,
           redirect_uri: msg.uri,
           grant_type: "authorization_code",
-          client_secret: process.env.HACKATIME_SECRET,
+          client_secret: hackameterApiToken,
         }),
       })
         .then((response) => response.json())
@@ -117,10 +115,7 @@ io.on("connection", (socket) => {
                         hackatimeToken: encryptToken(accessToken),
                         timestamp: Date.now(),
                       };
-                      socket.emit("auth_response", {
-                        success: true,
-                        loginToken: loginToken,
-                      });
+                 
 
                       fs.writeFileSync(
                         "tokens.json",
@@ -165,12 +160,34 @@ io.on("connection", (socket) => {
             error: "Failed to fetch token",
             success: false,
           });
+                  return;
+
         });
     }
+    // get wakatime api key
+    fetch("https://hackatime.hackclub.com/api/v1/authenticated/api_keys", {
+      headers: {
+        Authorization: "Bearer " + accessToken,
+      },
+    })
+      .then((response) => response.json())
+      .then((data) => {
+        if (data) {
+          wakatimeApiKey = data.token;
+           socket.emit("auth_response", {
+          success: true,
+          loginToken: msg.loginToken,
+        });
+        } else {
+          console.error("No WakaTime API keys found for the user.");
+        }
+      })
+      .catch((error) => {
+        console.error("Error fetching WakaTime API key:", error);
+      });
   });
-
   socket.on("api_request", (msg) => {
-    if (!accessToken) {
+    if (!accessToken || !userId || !wakatimeApiKey) {
       console.error("No access token available for API request.");
       socket.emit("api_response", {
         error: "No access token available",
@@ -184,24 +201,51 @@ io.on("connection", (socket) => {
       if (endpoint.includes("{YOUR_SECRET_TOKEN}")) {
         endpoint = endpoint.replace("{YOUR_SECRET_TOKEN}", accessToken);
       }
+      if(endpoint.includes("{WAKATIME_API_KEY}")) {
+        endpoint = endpoint.replace("{WAKATIME_API_KEY}", wakatimeApiKey);
+      }
       if (endpoint.includes("{USER_ID}")) {
         endpoint = endpoint.replace("{USER_ID}", userId);
       }
-      console.log("Making API request to endpoint:", endpoint, "with ID:", msg.id);
-      fetch("https://hackatime.hackclub.com/api/v1/" + msg.endpoint, {
+      console.log(
+        "Making API request to endpoint:",
+        endpoint,
+        "with ID:",
+        msg.id,
+      );
+      fetch("https://hackatime.hackclub.com/api/v1/" + endpoint, {
         headers: {
           Authorization: "Bearer " + accessToken,
         },
       })
-        .then((response) => response.json())
+        .then((response) => {
+          if (!response.ok) {
+            socket.emit("api_response" + msg.id, {
+              error: `HTTP error! status: ${response.status}`,
+              success: false,
+              id: msg.id,
+            });
+            throw new Error(
+              `HTTP error! status: ${response.status}. full response: ${response}. ID: ${msg.id}`,
+            );
+          } else {
+            return response.json();
+          }
+        })
         .then((data) => {
-          socket.emit("api_response"+msg.id, { data, success: true, id: msg.id });
+          console.log("API request successful with ID:", msg.id);
+          socket.emit("api_response" + msg.id, {
+            data,
+            success: true,
+            id: msg.id,
+          });
         })
         .catch((error) => {
           console.error("Error fetching API data:", error);
-          socket.emit("api_response", {
+          socket.emit("api_response" + msg.id, {
             error: "Failed to fetch API data",
             success: false,
+            id: msg.id,
           });
         });
     }
