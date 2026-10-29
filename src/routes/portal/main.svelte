@@ -3,13 +3,16 @@
   console.log("Initializing socket connection...");
   import { dev } from "$app/env";
   import { v4 as uuidv4 } from "uuid";
-
+  import { onMount } from "svelte";
   import Sidebar from "./sidebar.svelte";
   import Header from "./header.svelte";
   import Dashboard from "./dashboard.svelte";
+  let menuClicked = $state(false);
+
   export const authenticated = $state({ value: false });
   export const hackatimeData = $state({
     data: [],
+    simpleData: [],
     apiRequests: [],
   });
   // socket init
@@ -102,6 +105,8 @@
       });
     });
   }
+
+  // responsive stuff
 </script>
 
 <dialog style="z-index: 1000;" open={!connected} id="dialog" role="dialog">
@@ -109,9 +114,9 @@
 </dialog>
 <div id="portal-container">
   <header style="padding: 0.5rem;" id="top">
-    <Header />
+    <Header bind:menuClicked />
   </header>
-  <aside>
+  <aside style="display: {menuClicked ? 'block' : 'none'};">
     <Sidebar />
   </aside>
   <main>
@@ -120,10 +125,31 @@
 </div>
 
 <style>
+  @media (width <= 768px) {
+    aside {
+      display: none;
+      position: fixed;
+      top: 91px;
+      left: 0.5rem;
+      width: 235px;
+      height: calc(100vh - 91px - 0.5rem);
+    }
+    #portal-container {
+      grid-template-areas:
+        "header header"
+        "content content"
+        "footer footer" !important;
+    }
+  }
+  @media (width > 768px) {
+    aside {
+      display: block !important;
+    }
+  }
   #portal-container {
+    overflow: hidden;
     padding: 1rem;
     padding-top: 0;
-    background-color: #151618;
     display: grid;
     height: 100vh;
     width: 100vw;
@@ -140,12 +166,15 @@
   aside {
     grid-area: menu;
     border-right: 1px solid #3b3f44;
+    display: block;
   }
   header {
     grid-area: header;
     border-bottom: 1px solid #3b3f44;
   }
   main {
+    overflow-y: auto;
+    overflow-x: hidden;
     grid-area: content;
   }
 </style>

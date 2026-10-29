@@ -1,5 +1,6 @@
 <script>
   import "../layout.css";
+  import "../pico.fluid.css"
   import STONKS from "#lib/assets/STONKS.png";
 
   let { children } = $props();
