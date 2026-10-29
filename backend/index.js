@@ -31,6 +31,7 @@ const io = new Server({
   },
 });
 let currUsers = 0;
+
 io.on("connection", (socket) => {
   let accessToken = null;
   let loginToken = null;
@@ -44,32 +45,90 @@ io.on("connection", (socket) => {
   // auth coming in from client handeling
   socket.on("auth", (msg) => {
     console.log("Received auth message from :", socket.id);
+    function getWakatimeApiKey() {
+      console.log("Fetching WakaTime API key for user:", userId);
+      if (accessToken && userId) {
+        fetch("https://hackatime.hackclub.com/api/v1/authenticated/api_keys", {
+          headers: {
+            Authorization: "Bearer " + accessToken,
+          },
+        })
+          .then((response) => response.json())
+          .then((data) => {
+            if (data) {
+              wakatimeApiKey = data.token;
+              
+              socket.emit("auth_response", {
+                success: true,
+                loginToken: loginToken,
+              });
+            } else {
+              console.error("No WakaTime API keys found for the user.");
+              socket.emit("auth_response", {
+                error: "No WakaTime API keys found for the user.",
+                success: false,
+              });
+            }
+          })
+          .catch((error) => {
+            console.error("Error fetching WakaTime API key:", error);
+          });
+      } else {
+        console.error(
+          "Access token or user ID not available for WakaTime API key request.",
+        );
+        socket.emit("auth_response", {
+          error:
+            "Access token or user ID not available for WakaTime API key request.",
+          success: false,
+        });
+      }
+    }
     // my way
-    if (msg.loginToken != null && msg.loginToken != undefined) {
+    if (
+      msg.loginToken != null &&
+      msg.loginToken != undefined &&
+      msg.loginToken != "" &&
+      msg.loginToken
+    ) {
       // if login token is present, decrypt it and check if it is valid
       const decryptedToken = decryptToken(msg.loginToken);
-      const [userIdFromToken, emailFromToken] = decryptedToken.split(":");
-      if (
-        hackatimeTokens[userIdFromToken] &&
-        hackatimeTokens[userIdFromToken].loginToken === msg.loginToken
-      ) {
-        accessToken = decryptToken(
-          hackatimeTokens[userIdFromToken].hackatimeToken,
-        );
-        userId = userIdFromToken;
-        console.log(
-          "Successfully authenticated with Login Token. Redirecting to portal...",
-        );
+      if (decryptedToken) {
+        const [userIdFromToken, emailFromToken] = decryptedToken.split(":");
+        if (
+          hackatimeTokens[userIdFromToken] &&
+          hackatimeTokens[userIdFromToken].loginToken === msg.loginToken
+        ) {
+          accessToken = decryptToken(
+            hackatimeTokens[userIdFromToken].hackatimeToken,
+          );
+          userId = userIdFromToken;
+          console.log(
+            "Successfully authenticated with Login Token. Redirecting to portal...",
+          );
+          getWakatimeApiKey();
+        } else {
+          console.error("Invalid login token provided.");
+          socket.emit("auth_response", {
+            error: "Invalid login token",
+            success: false,
+          });
+          return;
+        }
       } else {
-        console.error("Invalid login token provided.");
+        console.error("Failed to decrypt the login token.");
         socket.emit("auth_response", {
-          error: "Invalid login token",
+          error: "Failed to decrypt the login token",
           success: false,
         });
         return;
       }
     } // hackatime
-    else if (msg.code && msg.uri) {
+    else if (
+      (msg.code && msg.uri) ||
+      msg.loginToken == null ||
+      msg.loginToken == undefined
+    ) {
       fetch("https://hackatime.hackclub.com/oauth/token", {
         method: "POST",
         headers: {
@@ -95,7 +154,22 @@ io.on("connection", (socket) => {
               data.access_token &&
               data.token_type == "Bearer"
             ) {
+              if (
+                data.access_token == null ||
+                data.access_token == undefined ||
+                data.access_token == ""
+              ) {
+                console.error("Access token is null or undefined.");
+                socket.emit("auth_response", {
+                  error: "Access token is null or undefined",
+                  success: false,
+                });
+                return;
+              }
+
               data.access_token ? (accessToken = data.access_token) : null;
+              accessToken = data.access_token ? data.access_token : accessToken;
+              console.log("Access token received:", accessToken);
               fetch("https://hackatime.hackclub.com/api/v1/authenticated/me", {
                 headers: {
                   Authorization: "Bearer " + accessToken,
@@ -119,6 +193,7 @@ io.on("connection", (socket) => {
                         "tokens.json",
                         JSON.stringify(hackatimeTokens, null, 2),
                       );
+                      getWakatimeApiKey();
                     }
                   } else {
                     if (data.error) {
@@ -162,26 +237,6 @@ io.on("connection", (socket) => {
         });
     }
     // get wakatime api key
-    fetch("https://hackatime.hackclub.com/api/v1/authenticated/api_keys", {
-      headers: {
-        Authorization: "Bearer " + accessToken,
-      },
-    })
-      .then((response) => response.json())
-      .then((data) => {
-        if (data) {
-          wakatimeApiKey = data.token;
-          socket.emit("auth_response", {
-            success: true,
-            loginToken: msg.loginToken,
-          });
-        } else {
-          console.error("No WakaTime API keys found for the user.");
-        }
-      })
-      .catch((error) => {
-        console.error("Error fetching WakaTime API key:", error);
-      });
   });
   socket.on("api_request", (msg) => {
     if (!accessToken || !userId || !wakatimeApiKey) {
@@ -213,7 +268,6 @@ io.on("connection", (socket) => {
         "with ID:",
         msg.id,
       );
-      console.log("Access Token:", accessToken);
       console.log("fetching from: https://hackatime.hackclub.com/" + endpoint);
       fetch("https://hackatime.hackclub.com/" + endpoint, {
         headers: {

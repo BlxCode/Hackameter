@@ -6,29 +6,44 @@
   import { onMount } from "svelte";
   let currentUrl = $state();
   import { dev } from "$app/env";
+  import { fade } from "svelte/transition";
 
   let isConnected = $state(socket.connected);
+  let trigger = $state(false);
   // init ig
+
   onMount(() => {
-    setTimeout(() => {
-      isConnected = socket.connected;
-      if (!isConnected) {
-        console.error(
-          "Socket connection failed. Please check your internet connection or try again later.",
-        );
-        alert(
-          "Server connection failed. Please check your internet connection or try again later.",
-        );
-      }
-    }, 5000);
+  
     currentUrl = window.location.href;
     // if user dosnt have code and first time in this site
-    if (localStorage.getItem("loginToken")) {
+    if (localStorage.getItem("loginToken") && localStorage.getItem("loginToken") != "" && localStorage.getItem("loginToken") != null && localStorage.getItem("loginToken") != undefined) {
       socket.emit("auth", { loginToken: localStorage.getItem("loginToken") });
       socket.on("auth_response", (data) => {
-        dashboardHidden = false;
+        if (data.success) {
+          trigger = true;
+
+          setTimeout(() => {
+            if (data.success) {
+              console.log(
+                "Successfully authenticated with HackaTime. Redirecting to portal...",
+              );
+              dashboardHidden = false;
+            } else {
+              console.error("Authentication failed:", data.error);
+              alert(
+                "Authentication failed: " +
+                  data.error +
+                  ". Please try again, and if the problem persists, dm me on slack or smth.",
+              );
+              window.location.href = dev
+                ? "http://localhost:5173"
+                : "https://hackameter.blxm.me";
+            }
+            dashboardHidden = false;
+          }, 500);
+        }
       });
-    } else if (!currentUrl.includes("code=")) {
+    } else if (currentUrl.includes("code=") == false && !localStorage.getItem("loginToken")) {
       window.location.href = dev
         ? "http://localhost:5173"
         : "https://hackameter.blxm.me";
@@ -55,14 +70,20 @@
       socket.on("auth_response", (data) => {
         console.log("Received auth_response:", data);
         if (data.success) {
+          trigger = true;
+
           console.log(
             "Successfully authenticated with HackaTime. Redirecting to portal...",
           );
-          dashboardHidden = false;
-          localStorage.setItem("loginToken", data.loginToken);
-           window.location.href = dev
-        ? "http://localhost:5173/portal"
-        : "https://hackameter.blxm.me/portal";
+          if(data.loginToken != undefined && data.loginToken != null && data.loginToken != "") {
+            localStorage.setItem("loginToken", data.loginToken);
+          }
+          window.location.href = dev
+            ? "http://localhost:5173/portal"
+            : "https://hackameter.blxm.me/portal";
+          setTimeout(() => {
+            dashboardHidden = false;
+          }, 500);
         } else {
           if (data.error == "invalid_grant") {
             console.error(
@@ -109,7 +130,23 @@
             ". Please try again, and if the problem persists, dm me on slack or smth.",
         );
       }
+    } else if(localStorage.getItem("loginToken") == null || localStorage.getItem("loginToken") == undefined || localStorage.getItem("loginToken") == "") {
+      localStorage.removeItem("loginToken");
+      window.location.href = dev
+        ? "http://localhost:5173"
+        : "https://hackameter.blxm.me";
     }
+      setTimeout(() => {
+      isConnected = socket.connected;
+      if (!isConnected) {
+        console.error(
+          "Socket connection failed. Please check your internet connection or try again later.",
+        );
+        alert(
+          "Server connection failed. Please check your internet connection or try again later.",
+        );
+      }
+    }, 2000);
   });
 </script>
 
@@ -122,10 +159,11 @@
     >
   </div>
 </header>
-
-<main hidden={dashboardHidden}>
-  <Dashboard />
-</main>
+{#if !dashboardHidden}
+  <main style="opacity: 1;" transition:fade={{ duration: 500 }}>
+    <Dashboard />
+  </main>
+{/if}
 
 <style>
   @keyframes rotate-arc {
@@ -137,6 +175,7 @@
     text-align: center;
     font-family: "Segoe UI", "Roboto", "Helvetica Neue", Arial, sans-serif;
   }
+
   #spinner-container {
     cursor: default;
     position: fixed;

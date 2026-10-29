@@ -14,6 +14,17 @@
     }, 500);
     redirectUrl = window.location.origin;
     if (localStorage.getItem("loginToken")) {
+      if (
+        localStorage.getItem("loginToken") == null ||
+        localStorage.getItem("loginToken") == undefined ||
+        localStorage.getItem("loginToken") == ""
+      ) {
+        localStorage.removeItem("loginToken");
+        window.location.href = dev
+          ? "http://localhost:5173"
+          : "https://hackameter.blxm.me";
+        return;
+      }
       linkUrl = `${redirectUrl || "https://hackameter.blxm.me"}/portal`;
     } else {
       linkUrl = `https://hackatime.hackclub.com/oauth/authorize?client_id=${HACKATIME_UID}&redirect_uri=${redirectUrl || "https://hackameter.blxm.me"}%2Fportal&response_type=code&scope=profile+read`;

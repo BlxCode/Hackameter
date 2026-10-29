@@ -7,7 +7,7 @@
   import Sidebar from "./sidebar.svelte";
   import Header from "./header.svelte";
   import Dashboard from "./dashboard.svelte";
-  let authenticated = $state(false);
+  export const authenticated = $state({ value: false });
   export const hackatimeData = $state({
     data: [],
     apiRequests: [],
@@ -34,12 +34,14 @@
   // AUTHENTICATOR
   socket.on("auth_response", (data) => {
     if (data.success) {
-      authenticated = true;
+      console.log("Authentication successful:", data);
+
+      authenticated.value = true;
 
       //make extra api requests
       apiRequest("api/v1/authenticated/me");
     } else {
-      authenticated = false;
+      authenticated.value = false;
       console.error("Authentication failed:", data.error);
     }
   });
@@ -49,46 +51,56 @@
   });
 
   // API
-  export async function apiRequest(endpoint, useWakatimeAuth = false) {
+  export async function apiRequest(
+    endpoint,
+    useWakatimeAuth = false,
+    callback = null,
+  ) {
     const apiId = uuidv4();
-    console.log("Making API request to endpoint:", endpoint, "with ID:", apiId);
-    if (authenticated) {
-      socket.emit("api_request", { endpoint: endpoint, id: apiId, useWakatimeAuth: useWakatimeAuth });
+
+    if (!authenticated.value) {
+      console.error("User is not authenticated.");
+
       hackatimeData.apiRequests[apiId] = {
-        endpoint: endpoint,
-        status: "pending",
+        endpoint,
+        status: "error",
+        success: false,
+        error: "Not authenticated",
       };
 
-      socket.on("api_response" + apiId, (response) => {
-        if (response.success) {
-          hackatimeData.data[response.id] = response.data;
-          hackatimeData.apiRequests[response.id] = {
-            endpoint: response.endpoint,
-            status: "success",
-          };
-          console.log("API request successful:", response.id);
-          return apiId;
-        } else {
-          console.error(
-            response.error,
-            "API request failed for ID:",
-            response.id,
-          );
-          hackatimeData.apiRequests[response.id] = {
-            endpoint: response.endpoint,
-            status: "error",
-          };
-          return apiId;
-        }
-      });
-    } else {
-      console.error("User is not authenticated. Cannot make API request.");
-      hackatimeData.apiRequests[response.id] = {
-        endpoint: response.endpoint,
-        status: "error",
-      };
+      if (callback) callback(apiId);
       return apiId;
     }
+
+    hackatimeData.apiRequests[apiId] = {
+      endpoint,
+      status: "pending",
+    };
+
+    return new Promise((resolve) => {
+      socket.once(`api_response${apiId}`, (response) => {
+        hackatimeData.apiRequests[apiId] = {
+          endpoint: response.endpoint ?? endpoint,
+          status: response.success ? "success" : "error",
+          success: response.success,
+          error: response.success ? undefined : response.error,
+        };
+
+        if (response.success) {
+          hackatimeData.data[apiId] = response.data;
+        }
+
+        if (callback) callback(apiId);
+
+        resolve(apiId);
+      });
+
+      socket.emit("api_request", {
+        endpoint,
+        id: apiId,
+        useWakatimeAuth,
+      });
+    });
   }
 </script>
 
@@ -96,7 +108,7 @@
   <strong>Server has failed to connect. Notes: {socket}</strong>
 </dialog>
 <div id="portal-container">
-  <header>
+  <header style="padding: 0.5rem;" id="top">
     <Header />
   </header>
   <aside>
@@ -110,6 +122,7 @@
 <style>
   #portal-container {
     padding: 1rem;
+    padding-top: 0;
     background-color: #151618;
     display: grid;
     height: 100vh;
