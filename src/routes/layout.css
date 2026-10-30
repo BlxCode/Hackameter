@@ -3,3 +3,6 @@
 @pico {
   theme: blue;
 }
+article:hover {
+  border-color: var(--pico-color-primary-100) !important;
+}
