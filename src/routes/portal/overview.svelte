@@ -28,36 +28,76 @@
   let todayTime = $state(
     hackatimeData.simpleData.todayTime || "No data available",
   );
+  let todayGoalTarget = $state(hackatimeData.simpleData.todayGoalTarget || 0);
+  let todayGoalPercent = $state(0);
   $effect(() => {
-    if (
-      hackatimeData.simpleData.totalTime &&
-      !totalTime.includes("h") &&
-      !totalTime.includes("m") &&
-      !totalTime.includes("s")
-    ) {
-      const formattedTotalTime = formatTime(hackatimeData.simpleData.totalTime);
-      totalTime = formattedTotalTime;
-    }
+    if (totalTime !== undefined && totalTime !== null) {
+      console.log("Total Time in sidebar.svelte:", totalTime);
+      if (hackatimeData.simpleData.totalTime) {
+        const formattedTotalTime = formatTime(
+          hackatimeData.simpleData.totalTime,
+        );
+        totalTime = formattedTotalTime;
+      }
 
-    if (
-      hackatimeData.simpleData.todayTime &&
-      !todayTime.includes("h") &&
-      !todayTime.includes("m") &&
-      !todayTime.includes("s")
-    ) {
-      const formattedTodayTime = formatTime(hackatimeData.simpleData.todayTime);
-      todayTime = formattedTodayTime;
+      if (hackatimeData.simpleData.todayTime !== undefined && hackatimeData.simpleData.todayTime !== null) {
+        const formattedTodayTime = formatTime(
+          hackatimeData.simpleData.todayTime,
+        );
+        todayTime = formattedTodayTime;
+      }
+
+      if (hackatimeData.simpleData.todayGoalTarget !== undefined && hackatimeData.simpleData.todayGoalTarget !== null) {
+        const formattedTodayGoalTarget = formatTime(
+          hackatimeData.simpleData.todayGoalTarget,
+        );
+        todayGoalTarget = formattedTodayGoalTarget;
+      }
+
+      if (
+        hackatimeData.simpleData.todayTime !== undefined &&
+        hackatimeData.simpleData.todayTime !== null &&
+        hackatimeData.simpleData.todayGoalTarget !== undefined &&
+        hackatimeData.simpleData.todayGoalTarget !== null
+      ) {
+        const percent =
+          (hackatimeData.simpleData.todayTime /
+            hackatimeData.simpleData.todayGoalTarget) *
+          100;
+        todayGoalPercent = percent.toFixed(2);
+      }
     }
   });
 
   $inspect("Today's Time in sidebar.svelte:", todayTime);
 </script>
-
+<div style="display:flex; flex-direction: row; gap: 0.5rem;">
+  
 <article>
   <p>Total Time</p>
   <strong>{totalTime || "No data available"}</strong>
 </article>
 <article>
   <p>Today's Time</p>
-  <strong>{todayTime || "No data available"}</strong>
+  <strong  >
+  <span data-tooltip={todayGoalPercent + "% of goal achieved"}>
+    {todayTime || "No data available"} /
+    <small class="muted">{todayGoalTarget || "No data available"}</small> 
+    </span><br />
+    <progress style="margin: 0.5rem 0;" value={todayGoalPercent || 0} max="100"
+  ></progress>
+  </strong>
+  
 </article>
+<article>
+  <p>Current Streak</p>
+  <strong>{hackatimeData.simpleData.streak || "No data available"}</strong>
+</article>
+</div>
+<style>
+  article{
+    flex:1;
+    vertical-align:middle;
+    width: 15rem;
+  }
+</style>

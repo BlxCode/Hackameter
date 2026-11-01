@@ -4,5 +4,9 @@
   theme: blue;
 }
 article:hover {
-  border-color: var(--pico-color-primary-100) !important;
+  border-color: var(--pico-primary-border) !important;
+}
+.muted {
+  color: var(--pico-muted-color);
+  font-weight: 200; 
 }

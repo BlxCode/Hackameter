@@ -3,11 +3,28 @@
   console.log("Initializing socket connection...");
   import { dev } from "$app/env";
   import { v4 as uuidv4 } from "uuid";
-  import { onMount } from "svelte";
   import Sidebar from "./sidebar.svelte";
   import Header from "./header.svelte";
   import Dashboard from "./dashboard.svelte";
+  import Achievements from "./achievements.svelte";
   let menuClicked = $state(false);
+
+  const Dashboards = {
+    overview: Dashboard,
+
+    achievements: Achievements,
+  };
+
+  let currentDashboard = $state("overview");
+  let DashboardToRender = $derived(Dashboards[currentDashboard]);
+
+  function changeDashboard(page) {
+    if (Dashboards[page]) {
+      console.log("Changing dashboard to:", page);
+      currentDashboard = page;
+      menuClicked = false;
+    }
+  }
 
   export const authenticated = $state({ value: false });
   export const hackatimeData = $state({
@@ -19,7 +36,7 @@
   console.log("Mounting socket connection...");
   let connected = $state(false);
   export const socket = io(
-    dev ? "http://localhost:3068" : "https://test-api.blxm.me",
+    dev ? "http://192.168.0.17:3068" : "https://test-api.blxm.me",
     { path: "/hackameter", autoConnect: true },
   );
   setTimeout(() => {
@@ -46,6 +63,10 @@
     } else {
       authenticated.value = false;
       console.error("Authentication failed:", data.error);
+      if(data.error == "Invalid login token"){
+localStorage.removeItem("loginToken");
+location.reload();
+      }
     }
   });
 
@@ -117,15 +138,15 @@
     <Header bind:menuClicked />
   </header>
   <aside style="display: {menuClicked ? 'block' : 'none'};">
-    <Sidebar />
+    <Sidebar bind:changeDashboard bind:currentDashboard />
   </aside>
   <main>
-    <Dashboard />
+    <DashboardToRender />
   </main>
 </div>
 
 <style>
-  @media (width <= 768px) {
+  @media (width <= 1000px) {
     aside {
       display: none;
       position: fixed;
@@ -140,15 +161,22 @@
         "content content"
         "footer footer" !important;
     }
+    main {
+      padding-left: 0.25rem;
+      padding-right: 0.25rem;
+    }
   }
-  @media (width > 768px) {
+  @media (width > 1000px) {
     aside {
       display: block !important;
+    }
+    main {
+      padding-left: 5%;
+      padding-right: 5%;
     }
   }
   #portal-container {
     overflow: hidden;
-    padding: 1rem;
     padding-top: 0;
     display: grid;
     height: 100vh;
@@ -157,23 +185,30 @@
       "header header"
       "menu content"
       "footer footer";
-    grid-template-columns: 235px 4fr;
+    grid-template-columns: 250px 4fr;
     grid-template-rows: auto 1fr auto;
     gap: 0px;
     font-family: "Segoe UI", "Roboto", "Helvetica Neue", Arial, sans-serif !important;
   }
 
   aside {
+    background-color: var(--pico-background-color);
     grid-area: menu;
-    border-right: 1px solid #3b3f44;
+    border-right: 1px solid var(--pico-secondary-border);
     display: block;
+    padding: 0.25rem;
+    z-index:7666767674852375235;
   }
   header {
     grid-area: header;
-    border-bottom: 1px solid #3b3f44;
+    padding: 0.25rem;
+
+    border-bottom: 1px solid var(--pico-secondary-border);
   }
   main {
     overflow-y: auto;
+    padding-top: 0.25rem;
+    padding-bottom: 0.25rem;
     overflow-x: hidden;
     grid-area: content;
   }

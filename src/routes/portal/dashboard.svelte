@@ -1,6 +1,7 @@
 <script>
   import { hackatimeData } from "./main.svelte";
   import Overview from "./overview.svelte";
+  import Last7Days from "./last7days.svelte";
   let randomWelcomeWords = [
     "Welcome",
     "Greetings",
@@ -54,7 +55,9 @@
   <h2 id="overview top">Overview</h2>
   <div class="row">
     <Overview />
-  </div>
+  </div><br>
+  <h2>Last 7 Days</h2><br>
+  <div class="row"><Last7Days /></div>
 </div>
 
 <style>
@@ -65,7 +68,8 @@
   .row {
     text-align: center;
     justify-content: center;
-
+    padding-left: 1.25rem;
+    padding-right: 1.25rem;
     display: flex;
     align-items: center;
     flex-wrap: wrap;

@@ -163,7 +163,7 @@
   </div>
 </header>
 {#if !dashboardHidden}
-  <main style="opacity: 1;" transition:fade={{ duration: 500 }}>
+  <main style="opacity: 0.99;" transition:fade={{ duration: 500 }}>
     <Dashboard />
   </main>
 {/if}

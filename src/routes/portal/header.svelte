@@ -13,7 +13,7 @@
 </div>
 
 <style>
-@media (width <= 768px) {
+@media (width <= 1000px) {
   #portal-header-buttons {
     display: none !important;
   }

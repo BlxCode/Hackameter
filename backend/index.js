@@ -9,15 +9,15 @@ const hackatimeTokens = JSON.parse(hackatimeTokensJson);
 const sixtyDaysAgo = new Date(Date.now() - 60 * 24 * 60 * 60 * 1000); // 60 days in milliseconds
 // delete old tokens after boot
 const hackameterApiToken = process.env.HACKATIME_SECRET;
+setInterval(() => {
 for (const userId of Object.keys(hackatimeTokens)) {
   const tokenData = hackatimeTokens[userId];
   const timestamp = tokenData.timestamp;
-  if (Date.now() - sixtyDaysAgo > timestamp) {
-    // delete the old token
-    delete hackatimeTokens[userId];
-  }
+  if (timestamp < sixtyDaysAgo.getTime()) {
+  delete hackatimeTokens[userId];
 }
-
+}
+}, 24 * 60 * 60 * 1000); // run every 24 hours
 const io = new Server({
   path: "/hackameter/",
   cors: {
@@ -27,6 +27,7 @@ const io = new Server({
       "https://hackameter.blxm.me",
       "https://hackameter-git-main-blxcodes-projects.vercel.app/",
       "https://hackameter.vercel.app/",
+      "http://192.168.0.17:5173",
     ],
   },
 });
@@ -169,7 +170,6 @@ io.on("connection", (socket) => {
 
               data.access_token ? (accessToken = data.access_token) : null;
               accessToken = data.access_token ? data.access_token : accessToken;
-              console.log("Access token received:", accessToken);
               fetch("https://hackatime.hackclub.com/api/v1/authenticated/me", {
                 headers: {
                   Authorization: "Bearer " + accessToken,
