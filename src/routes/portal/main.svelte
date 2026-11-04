@@ -8,12 +8,41 @@
   import Dashboard from "./dashboard.svelte";
   import Achievements from "./achievements.svelte";
   let menuClicked = $state(false);
-
+  let connected = $state(false);
   const Dashboards = {
     overview: Dashboard,
 
     achievements: Achievements,
   };
+
+  async function getContinent() {
+    try {
+      const response = await fetch("https://get.geojs.io/v1/ip/geo.json");
+
+      if (!response.ok) {
+        throw new Error(`GeoJS returned ${response.status}`);
+      }
+
+      const data = await response.json();
+
+      console.log("Current Continent:", data.continent_code);
+
+      const continentMap = {
+        NA: "NA",
+        EU: "EU",
+        AS: "EU",
+        SA: "NA",
+        AF: "EU",
+        OC: "NA",
+        AN: "NA",
+      };
+
+      return continentMap[data.continent_code] ?? "NA";
+    } catch (error) {
+      console.error("Continent detection failed:", error);
+      return "NA";
+    }
+  }
 
   let currentDashboard = $state("overview");
   let DashboardToRender = $derived(Dashboards[currentDashboard]);
@@ -34,11 +63,24 @@
   });
   // socket init
   console.log("Mounting socket connection...");
-  let connected = $state(false);
-  export const socket = io(
-    dev ? "http://192.168.0.17:3068" : "https://test-api.blxm.me",
-    { path: "/hackameter", autoConnect: true },
-  );
+
+  const continent = await getContinent();
+
+  console.log("Selected region:", continent);
+
+  const url = dev
+    ? "http://localhost:3068"
+    : continent === "NA"
+      ? "https://test-api.blxm.me"
+      : "https://nest-api.blxm.me";
+
+  export const socket = io(url, {
+    path: "/hackameter",
+    autoConnect: true,
+      transports: ["websocket"],
+
+  });
+
   setTimeout(() => {
     if (!socket.connected) {
       console.error(
@@ -50,6 +92,9 @@
   socket.on("connect", () => {
     console.log("Connected to server via socket.io");
     connected = true;
+  });
+  socket.on("alert", (msg) => {
+    console.log(msg);
   });
   // AUTHENTICATOR
   socket.on("auth_response", (data) => {
@@ -63,9 +108,9 @@
     } else {
       authenticated.value = false;
       console.error("Authentication failed:", data.error);
-      if(data.error == "Invalid login token"){
-localStorage.removeItem("loginToken");
-location.reload();
+      if (data.error == "Invalid login token") {
+        localStorage.removeItem("loginToken");
+        location.reload();
       }
     }
   });
@@ -150,10 +195,13 @@ location.reload();
     aside {
       display: none;
       position: fixed;
-      top: 91px;
+      top: 90px;
       left: 0.5rem;
+      border-top: 1px solid var(--pico-secondary-border);
+
       width: 235px;
-      height: calc(100vh - 91px - 0.5rem);
+      height: calc(100vh - 90px + 0.1rem);
+      box-shadow: 2rem 0 1rem rgba(0, 0, 0, 0.1);
     }
     #portal-container {
       grid-template-areas:
@@ -187,7 +235,7 @@ location.reload();
       "footer footer";
     grid-template-columns: 250px 4fr;
     grid-template-rows: auto 1fr auto;
-    gap: 0px;
+    gap: 0;
     font-family: "Segoe UI", "Roboto", "Helvetica Neue", Arial, sans-serif !important;
   }
 
@@ -197,12 +245,11 @@ location.reload();
     border-right: 1px solid var(--pico-secondary-border);
     display: block;
     padding: 0.25rem;
-    z-index:7666767674852375235;
+    z-index: 7666767674852375235;
   }
   header {
     grid-area: header;
     padding: 0.25rem;
-
     border-bottom: 1px solid var(--pico-secondary-border);
   }
   main {

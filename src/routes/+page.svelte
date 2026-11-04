@@ -1,17 +1,48 @@
 <script>
   import STONKS from "#lib/assets/STONKS.png";
-  import { writable } from "svelte/store";
   import { onMount } from "svelte";
 
-  const HACKATIME_UID = import.meta.env.VITE_HACKATIME_UID;
+  let continent = $state("NA");
   let redirectUrl = $state();
-  let buttonText = writable("Enter HackaMeter");
   let linkUrl = $state();
   let whenMounted = $state(false);
   onMount(() => {
-    setTimeout(() => {
-      whenMounted = true;
-    }, 500);
+    async function fetchContinent() {
+      setTimeout(() => {
+        continent = "NA";
+        whenMounted = true;
+      }, 5000);
+      fetch("https://get.geojs.io/v1/ip/geo.json")
+        .then((response) => response.json())
+        .then((data) => {
+          console.log("Current Continent:", data.continent_code);
+          switch (data.continent_code) {
+            default:
+              continent = "NA";
+            case "NA":
+              continent = "NA";
+            case "EU":
+              continent = "EU";
+            case "AS":
+              continent = "EU";
+            case "SA":
+              continent = "NA";
+            case "AF":
+              continent = "EU";
+            case "OC":
+              continent = "NA";
+            case "AN":
+              continent = "NA";
+          }
+
+          whenMounted = true;
+        });
+    }
+    const NA_UID = import.meta.env.VITE_NA_UID;
+    const EU_UID = import.meta.env.VITE_EU_UID;
+
+    fetchContinent();
+
     redirectUrl = window.location.origin;
     if (localStorage.getItem("loginToken")) {
       if (
@@ -27,7 +58,9 @@
       }
       linkUrl = `${redirectUrl || "https://hackameter.blxm.me"}/portal`;
     } else {
-      linkUrl = `https://hackatime.hackclub.com/oauth/authorize?client_id=${HACKATIME_UID}&redirect_uri=${redirectUrl || "https://hackameter.blxm.me"}%2Fportal&response_type=code&scope=profile+read`;
+      
+      console.log(continent);
+      linkUrl = `https://hackatime.hackclub.com/oauth/authorize?client_id=${continent == "EU" ? EU_UID : NA_UID}&redirect_uri=${redirectUrl || "https://hackameter.blxm.me"}%2Fportal&response_type=code&scope=profile+read`;
     }
   });
 </script>
@@ -43,8 +76,15 @@
     </p>
   </hgroup>
   <a href={linkUrl}
-    ><button disabled={!whenMounted} aria-busy={!whenMounted} class="primary"
-      >{$buttonText}</button
+    ><button
+      disabled={!whenMounted}
+      aria-busy={!whenMounted}
+      class="primary"
+      data-tooltip={whenMounted
+        ? "Continent code tells you which server you are connected to."
+        : "Loading..."}
+    >
+      Enter HackaMeter ({continent})</button
     ></a
   >
   <a
@@ -65,7 +105,9 @@
     transform: translate(-50%, -50%);
   }
   h1 {
-    font-size: 5rem;
+    font-size: max(3vw, 60px);
+
+    word-wrap: normal;
   }
   p {
     font-size: 1.5rem;

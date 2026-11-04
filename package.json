@@ -8,6 +8,7 @@
     "backend": "cd backend &&node index.js",
     "dev": "concurrently \"npm run backend\" \"npm run frontend\"",
     "build": "node -r dotenv/config ./node_modules/.bin/vite build",
+    "deployBackend": "./deploy.sh",
     "preview": "node -r dotenv/config ./node_modules/.bin/vite preview",
     "prepare": "svelte-kit sync || echo ''"
   },

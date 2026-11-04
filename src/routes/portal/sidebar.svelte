@@ -97,7 +97,6 @@
                 hackatimeData.data[apiId].data.languages;
               hackatimeData.simpleData["last7DaysEditors"] =
                 hackatimeData.data[apiId].data.editors;
-                
             } else {
               console.error(
                 "API request failed:",
@@ -127,7 +126,25 @@
                 hackatimeData.data[apiId].data.grand_total.total_seconds;
               hackatimeData.simpleData["todayGoalTarget"] =
                 hackatimeData.data[apiId].data.goal.target_seconds;
-            
+            } else {
+              console.error(
+                "API request failed:",
+                hackatimeData.apiRequests[apiId].error,
+              );
+            }
+          }
+        });
+
+        apiRequest(
+          "api/summary?start=&end=&user_id={USER_ID}",
+          true,
+        ).then((apiId) => {
+          console.log("API request sent with ID:", apiId);
+          if (apiId) {
+            if (hackatimeData.apiRequests[apiId].success) {
+              console.log("streak:", hackatimeData.data[apiId]);
+              hackatimeData.simpleData["streak"] =
+                hackatimeData.data[apiId].streak_days;
             } else {
               console.error(
                 "API request failed:",

@@ -71,7 +71,7 @@
 
   $inspect("Today's Time in sidebar.svelte:", todayTime);
 </script>
-<div style="display:flex; flex-direction: row; gap: 0.5rem;">
+<div style="display:flex; flex-direction: row; gap: 0.5rem; flex-wrap: wrap;">
   
 <article>
   <p>Total Time</p>
@@ -98,6 +98,6 @@
   article{
     flex:1;
     vertical-align:middle;
-    width: 15rem;
+    min-width: 15rem;
   }
 </style>

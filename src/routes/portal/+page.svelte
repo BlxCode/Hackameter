@@ -1,6 +1,7 @@
 <script>
   import STONKS from "#lib/assets/STONKS.png";
   import Dashboard, { socket } from "./main.svelte";
+
   const HACKATIME_UID = import.meta.env.VITE_HACKATIME_UID;
   let dashboardHidden = $state(true);
   import { onMount } from "svelte";
@@ -11,12 +12,17 @@
   let isConnected = $state(socket.connected);
   let trigger = $state(false);
   // init ig
+ 
 
   onMount(() => {
-  
     currentUrl = window.location.href;
     // if user dosnt have code and first time in this site
-    if (localStorage.getItem("loginToken") && localStorage.getItem("loginToken") != "" && localStorage.getItem("loginToken") != null && localStorage.getItem("loginToken") != undefined) {
+    if (
+      localStorage.getItem("loginToken") &&
+      localStorage.getItem("loginToken") != "" &&
+      localStorage.getItem("loginToken") != null &&
+      localStorage.getItem("loginToken") != undefined
+    ) {
       socket.emit("auth", { loginToken: localStorage.getItem("loginToken") });
       socket.on("auth_response", (data) => {
         if (data.success) {
@@ -43,7 +49,10 @@
           }, 500);
         }
       });
-    } else if (currentUrl.includes("code=") == false && !localStorage.getItem("loginToken")) {
+    } else if (
+      currentUrl.includes("code=") == false &&
+      !localStorage.getItem("loginToken")
+    ) {
       window.location.href = dev
         ? "http://localhost:5173"
         : "https://hackameter.blxm.me";
@@ -75,7 +84,11 @@
           console.log(
             "Successfully authenticated with HackaTime. Redirecting to portal...",
           );
-          if(data.loginToken != undefined && data.loginToken != null && data.loginToken != "") {
+          if (
+            data.loginToken != undefined &&
+            data.loginToken != null &&
+            data.loginToken != ""
+          ) {
             localStorage.setItem("loginToken", data.loginToken);
           }
           window.location.href = dev
@@ -130,13 +143,17 @@
             ". Please try again, and if the problem persists, dm me on slack or smth.",
         );
       }
-    } else if(localStorage.getItem("loginToken") == null || localStorage.getItem("loginToken") == undefined || localStorage.getItem("loginToken") == "") {
+    } else if (
+      localStorage.getItem("loginToken") == null ||
+      localStorage.getItem("loginToken") == undefined ||
+      localStorage.getItem("loginToken") == ""
+    ) {
       localStorage.removeItem("loginToken");
       window.location.href = dev
         ? "http://localhost:5173"
         : "https://hackameter.blxm.me";
     }
-      setTimeout(() => {
+    setTimeout(() => {
       isConnected = socket.connected;
       if (!isConnected) {
         console.error(
@@ -147,9 +164,6 @@
         );
       }
     }, 2000);
-
-
-    
   });
 </script>
 

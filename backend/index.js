@@ -1,45 +1,97 @@
 import { Server } from "socket.io";
+import { io } from "socket.io-client";
 import { encryptToken, decryptToken } from "./hackatimeTokenEncryption.js";
 import fs from "fs";
 import "dotenv/config";
 console.log("Starting server...");
-const hackatimeTokensJson = fs.readFileSync("tokens.json", "utf8");
-// delete old tokens
-const hackatimeTokens = JSON.parse(hackatimeTokensJson);
-const sixtyDaysAgo = new Date(Date.now() - 60 * 24 * 60 * 60 * 1000); // 60 days in milliseconds
-// delete old tokens after boot
+const currentServer = process.env.CURRENT_SERVER;
+const serverToServerSecret = process.env.SERVER_TO_SERVER_SECRET;
+let hackatimeTokensJson;
+let hackatimeTokens;
+if (currentServer == "NA") {
+  hackatimeTokensJson = fs.readFileSync("tokens.json", "utf8");
+
+  // delete old tokens
+  hackatimeTokens = JSON.parse(hackatimeTokensJson);
+  // delete old tokens after boot
+}
 const hackameterApiToken = process.env.HACKATIME_SECRET;
-setInterval(() => {
-for (const userId of Object.keys(hackatimeTokens)) {
-  const tokenData = hackatimeTokens[userId];
-  const timestamp = tokenData.timestamp;
-  if (timestamp < sixtyDaysAgo.getTime()) {
-  delete hackatimeTokens[userId];
+let NAServer;
+let recieveEUServer;
+if (currentServer == "NA") {
+  const sixtyDaysAgo = new Date(Date.now() - 60 * 24 * 60 * 60 * 1000); // 60 days in milliseconds
+  setInterval(
+    () => {
+      for (const userId of Object.keys(hackatimeTokens)) {
+        const tokenData = hackatimeTokens[userId];
+        const timestamp = tokenData.timestamp;
+        if (timestamp < sixtyDaysAgo.getTime()) {
+          delete hackatimeTokens[userId];
+        }
+      }
+    },
+    24 * 60 * 60 * 1000,
+  ); // run every 24 hours
+  console.log("Starting server to recieve EU server connections...");
+  recieveEUServer = new Server({
+    path: "/nonNAServer/",
+    cors: {
+      origin: [
+        "https://blxm-server.hackclub.app",
+        "https://nest-api.blxm.me",
+        "https://test-api.blxm.me",
+      ],
+    },
+  });
+} else if (currentServer == "EU") {
+  NAServer = io("https://test-api.blxm.me", {
+    path: "/nonNAServer",
+    autoConnect: true,
+    auth: {
+      secret: serverToServerSecret,
+    },
+    transports: ["websocket"],
+  });
+
+  NAServer.on("connect", () => {
+    console.log("Connected to NA server!", NAServer.id);
+  });
+
+  NAServer.on("connect_error", (error) => {
+    console.error("Failed to connect to NA server:", error.message);
+  });
+
+  NAServer.on("disconnect", (reason) => {
+    console.log("Disconnected from NA server:", reason);
+  });
 }
-}
-}, 24 * 60 * 60 * 1000); // run every 24 hours
-const io = new Server({
+
+const server = new Server({
   path: "/hackameter/",
   cors: {
     origin: [
       "http://localhost:5173",
       "http://localhost:5174",
       "https://hackameter.blxm.me",
+      "https://test-api.blxm.me",
       "https://hackameter-git-main-blxcodes-projects.vercel.app/",
-      "https://hackameter.vercel.app/",
+      "https://hackameter.vercel.app",
       "http://192.168.0.17:5173",
     ],
   },
 });
 let currUsers = 0;
 
-io.on("connection", (socket) => {
+server.on("connection", (socket) => {
   let accessToken = null;
   let loginToken = null;
   let userId = null;
   let slackId = null;
   let wakatimeApiKey = null;
+  socket.emit("alert", "Welcome to the HackaMeter!");
   console.log("a user connected", socket.id);
+  console.log("ip:", socket.handshake.address);
+
   currUsers++;
   console.log("current users:", currUsers);
 
@@ -58,7 +110,8 @@ io.on("connection", (socket) => {
           .then((data) => {
             if (data) {
               wakatimeApiKey = data.token;
-              
+console.log("Successfully fetched WakaTime API key for user:", userId);
+console.log("socket.id:", socket.id);
               socket.emit("auth_response", {
                 success: true,
                 loginToken: loginToken,
@@ -96,25 +149,50 @@ io.on("connection", (socket) => {
       const decryptedToken = decryptToken(msg.loginToken);
       if (decryptedToken) {
         const [userIdFromToken, emailFromToken] = decryptedToken.split(":");
-        if (
-          hackatimeTokens[userIdFromToken] &&
-          hackatimeTokens[userIdFromToken].loginToken === msg.loginToken
-        ) {
-          accessToken = decryptToken(
-            hackatimeTokens[userIdFromToken].hackatimeToken,
-          );
-          userId = userIdFromToken;
-          console.log(
-            "Successfully authenticated with Login Token. Redirecting to portal...",
-          );
-          getWakatimeApiKey();
-        } else {
-          console.error("Invalid login token provided.");
-          socket.emit("auth_response", {
-            error: "Invalid login token",
-            success: false,
+        if (currentServer == "NA") {
+          if (
+            hackatimeTokens[userIdFromToken] &&
+            hackatimeTokens[userIdFromToken].loginToken === msg.loginToken
+          ) {
+            accessToken = decryptToken(
+              hackatimeTokens[userIdFromToken].hackatimeToken,
+            );
+            userId = userIdFromToken;
+            console.log(
+              "Successfully authenticated with Login Token. Redirecting to portal...",
+            );
+            getWakatimeApiKey();
+          } else {
+            console.error("Invalid login token provided.");
+            socket.emit("auth_response", {
+              error: "Invalid login token",
+              success: false,
+            });
+            return;
+          }
+        } else if (currentServer == "EU") {
+          console.log("Sending login token to NA server for validation...");
+          NAServer.emit("check_login_token", {
+            loginToken: msg.loginToken,
+            socketId: socket.id,
           });
-          return;
+          NAServer.on("login_token_response", (response) => {
+            if (response.success) {
+              accessToken = decryptToken(response.hackatimeToken);
+              userId = response.userId;
+              console.log(
+                "Successfully authenticated with Login Token. Redirecting to portal...",
+              );
+              getWakatimeApiKey();
+            } else {
+              console.error("Invalid login token provided. ");
+              socket.emit("auth_response", {
+                error: "Invalid login token",
+                success: false,
+              });
+              return;
+            }
+          });
         }
       } else {
         console.error("Failed to decrypt the login token.");
@@ -147,7 +225,10 @@ io.on("connection", (socket) => {
         .then((data) => {
           if (data.error) {
             console.error("Error in response from HackaTime:", data);
-            socket.emit("auth_response", { error: data.error, success: false });
+            socket.emit("auth_response", {
+              error: data.error,
+              success: false,
+            });
           } else {
             // IF SUCCESSFUL, STORE ACCESS TOKEN
             if (
@@ -182,17 +263,25 @@ io.on("connection", (socket) => {
                     slackId = data.slack_id;
                     loginToken = encryptToken(userId + ":" + data.emails[0]);
                     if (loginToken) {
-                      hackatimeTokens[userId] = {
-                        userId: userId,
-                        loginToken: loginToken,
-                        hackatimeToken: encryptToken(accessToken),
-                        timestamp: Date.now(),
-                      };
-
-                      fs.writeFileSync(
-                        "tokens.json",
-                        JSON.stringify(hackatimeTokens, null, 2),
-                      );
+                      if (currentServer == "NA") {
+                        hackatimeTokens[userId] = {
+                          userId: userId,
+                          loginToken: loginToken,
+                          hackatimeToken: encryptToken(accessToken),
+                          timestamp: Date.now(),
+                        };
+                        fs.writeFileSync(
+                          "tokens.json",
+                          JSON.stringify(hackatimeTokens, null, 2),
+                        );
+                      } else if (currentServer == "EU") {
+                        NAServer.emit("update_tokens", {
+                          userId: userId,
+                          loginToken: loginToken,
+                          hackatimeToken: encryptToken(accessToken),
+                          timestamp: Date.now(),
+                        });
+                      }
                       getWakatimeApiKey();
                     }
                   } else {
@@ -319,4 +408,59 @@ io.on("connection", (socket) => {
   });
 });
 
-io.listen(3068);
+if (currentServer == "NA") {
+  recieveEUServer.on("connection", (socket) => {
+    console.log("EU server connected:", socket.id);
+    if (socket.handshake.auth.secret !== serverToServerSecret) {
+      console.error("Invalid secret from EU server. Disconnecting...");
+      socket.disconnect();
+      return;
+    }
+    socket.on("check_login_token", (msg) => {
+      const { loginToken } = msg;
+      const decryptedToken = decryptToken(loginToken);
+      if (decryptedToken) {
+        const [userIdFromToken, emailFromToken] = decryptedToken.split(":");
+        if (
+          hackatimeTokens[userIdFromToken] 
+        ) {
+          const hackatimeToken =
+            hackatimeTokens[userIdFromToken].hackatimeToken;
+            console.log("Sending userid response to EU server for user:", userIdFromToken);
+          recieveEUServer.to(socket.id).emit("login_token_response", {
+            success: true,
+            hackatimeToken: hackatimeToken,
+
+            userId: userIdFromToken,
+          });
+        } else {
+          console.error("Invalid login token provided from EU server.", decryptedToken);
+          recieveEUServer.to(socket.id).emit("login_token_response", {
+            success: false,
+            error: "Invalid login token",
+          });
+        }
+      } else {
+        recieveEUServer.to(socket.id).emit("login_token_response", {
+          success: false,
+          error: "Failed to decrypt the login token",
+        });
+        console.error("Failed to decrypt the login token from EU server.",loginToken);
+      }
+    });
+
+    socket.on("update_tokens", (msg) => {
+      const { userId, loginToken, hackatimeToken, timestamp } = msg;
+      hackatimeTokens[userId] = {
+        userId,
+        loginToken,
+        hackatimeToken,
+        timestamp,
+      };
+      fs.writeFileSync("tokens.json", JSON.stringify(hackatimeTokens, null, 2));
+    });
+  });
+  recieveEUServer.listen(3067);
+}
+
+server.listen(3068);

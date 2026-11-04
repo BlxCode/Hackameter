@@ -12,6 +12,7 @@ node_modules
 .DS_Store
 Thumbs.db
 .vscode
+deploy.sh
 
 # Env
 .env

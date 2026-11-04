@@ -48,7 +48,7 @@
     }
   });
 </script>
-
+<div style="display:flex; flex-direction: row; gap: 0.5rem; flex-wrap: wrap;">
 <article>
   <p>Total</p>
   <strong>{last7DaysTotal || "No data available"}</strong>
@@ -58,3 +58,11 @@
   <p>Average Daily Time</p>
   <strong>{averageDailyTime || "No data available"}</strong>
 </article>
+</div>
+<style>
+  article {
+    flex: 1;
+    vertical-align: middle;
+    min-width: 15rem;
+  }
+</style>
