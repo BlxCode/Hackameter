@@ -4,6 +4,7 @@
 
   const HACKATIME_UID = import.meta.env.VITE_HACKATIME_UID;
   let dashboardHidden = $state(true);
+  let loadingHidden = $state(false);
   import { onMount } from "svelte";
   let currentUrl = $state();
   import { dev } from "$app/env";
@@ -12,7 +13,6 @@
   let isConnected = $state(socket.connected);
   let trigger = $state(false);
   // init ig
- 
 
   onMount(() => {
     currentUrl = window.location.href;
@@ -46,7 +46,10 @@
                 : "https://hackameter.blxm.me";
             }
             dashboardHidden = false;
-          }, 500);
+            setTimeout(() => {
+              loadingHidden = true;
+            }, 500);
+          }, 400);
         }
       });
     } else if (
@@ -167,9 +170,15 @@
   });
 </script>
 
-<header hidden={!dashboardHidden} class="container">
+<header
+  class="container {loadingHidden ? 'fadeOut' : ''}"
+  style="opacity: 0.99;"
+>
   <div id="spinner-container" data-tooltip="Loading...">
-    <svg id="spinner" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640"
+    <svg
+      id="spinner"
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 640 640"
       ><!--!Font Awesome Free v7.3.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2026 Fonticons, Inc.--><path
         d="M286.7 96.1C291.7 113 282.1 130.9 265.2 135.9C185.9 159.5 128.1 233 128.1 320C128.1 426 214.1 512 320.1 512C426.1 512 512.1 426 512.1 320C512.1 233.1 454.3 159.6 375 135.9C358.1 130.9 348.4 113 353.5 96.1C358.6 79.2 376.4 69.5 393.3 74.6C498.9 106.1 576 204 576 320C576 461.4 461.4 576 320 576C178.6 576 64 461.4 64 320C64 204 141.1 106.1 246.9 74.6C263.8 69.6 281.7 79.2 286.7 96.1z"
       /></svg
@@ -177,12 +186,21 @@
   </div>
 </header>
 {#if !dashboardHidden}
-  <main style="opacity: 0.99;" transition:fade={{ duration: 500 }}>
+  <main style="opacity: 0.99;">
     <Dashboard />
   </main>
 {/if}
 
 <style>
+  @keyframes fadeOut {
+    to {
+      opacity: 0;
+      visibility: hidden;
+    }
+  }
+  .fadeOut {
+    animation: fadeOut 0.5s forwards;
+  }
   @keyframes rotate-arc {
     to {
       transform: translate(-50%, -50%) rotate(360deg);
@@ -218,6 +236,8 @@
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%) scale(1.01);
+    z-index: 9999999;
+    background-color: var(--pico-background-color);
   }
   h1 {
     font-size: 5rem;

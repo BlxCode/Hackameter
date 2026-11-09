@@ -9,6 +9,7 @@
   import Achievements from "./achievements.svelte";
   let menuClicked = $state(false);
   let connected = $state(false);
+  import ApiRequests from "./apiRequests.svelte";
   const Dashboards = {
     overview: Dashboard,
 
@@ -43,7 +44,7 @@
       return "NA";
     }
   }
-
+export const dashboardCurrentlyShown = $state({data: "overview"});
   let currentDashboard = $state("overview");
   let DashboardToRender = $derived(Dashboards[currentDashboard]);
 
@@ -51,6 +52,7 @@
     if (Dashboards[page]) {
       console.log("Changing dashboard to:", page);
       currentDashboard = page;
+      dashboardCurrentlyShown.data = page;
       menuClicked = false;
     }
   }
@@ -77,14 +79,15 @@
   export const socket = io(url, {
     path: "/hackameter",
     autoConnect: true,
-      transports: ["websocket"],
-
+    transports: ["websocket"],
   });
 
   setTimeout(() => {
     if (!socket.connected) {
       console.error(
-        "Socket connection failed. Please check your internet connection or try again later.",
+        "Socket connection failed to ",
+        url,
+        " Please check your internet connection or try a vpn to connect to the other server again later.",
       );
       connected = false;
     }
@@ -104,7 +107,7 @@
       authenticated.value = true;
 
       //make extra api requests
-      apiRequest("api/v1/authenticated/me");
+      apiRequest("aboutUser");
     } else {
       authenticated.value = false;
       console.error("Authentication failed:", data.error);
@@ -120,18 +123,13 @@
   });
 
   // API
-  export async function apiRequest(
-    endpoint,
-    useWakatimeAuth = false,
-    callback = null,
-  ) {
+  export async function apiRequest(apiName = "dashboard", callback = null) {
     const apiId = uuidv4();
 
     if (!authenticated.value) {
       console.error("User is not authenticated.");
 
       hackatimeData.apiRequests[apiId] = {
-        endpoint,
         status: "error",
         success: false,
         error: "Not authenticated",
@@ -142,14 +140,12 @@
     }
 
     hackatimeData.apiRequests[apiId] = {
-      endpoint,
       status: "pending",
     };
 
     return new Promise((resolve) => {
       socket.once(`api_response${apiId}`, (response) => {
         hackatimeData.apiRequests[apiId] = {
-          endpoint: response.endpoint ?? endpoint,
           status: response.success ? "success" : "error",
           success: response.success,
           error: response.success ? undefined : response.error,
@@ -165,9 +161,8 @@
       });
 
       socket.emit("api_request", {
-        endpoint,
         id: apiId,
-        useWakatimeAuth,
+        apiName: apiName,
       });
     });
   }
@@ -189,7 +184,7 @@
     <DashboardToRender />
   </main>
 </div>
-
+<ApiRequests />
 <style>
   @media (width <= 1000px) {
     aside {

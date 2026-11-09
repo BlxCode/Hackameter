@@ -2,6 +2,7 @@ import { Server } from "socket.io";
 import { io } from "socket.io-client";
 import { encryptToken, decryptToken } from "./hackatimeTokenEncryption.js";
 import fs from "fs";
+import { getApis } from "./allApiRequirements.js";
 import "dotenv/config";
 console.log("Starting server...");
 const currentServer = process.env.CURRENT_SERVER;
@@ -110,8 +111,11 @@ server.on("connection", (socket) => {
           .then((data) => {
             if (data) {
               wakatimeApiKey = data.token;
-console.log("Successfully fetched WakaTime API key for user:", userId);
-console.log("socket.id:", socket.id);
+              console.log(
+                "Successfully fetched WakaTime API key for user:",
+                userId,
+              );
+              console.log("socket.id:", socket.id);
               socket.emit("auth_response", {
                 success: true,
                 loginToken: loginToken,
@@ -336,68 +340,37 @@ console.log("socket.id:", socket.id);
       });
       return;
     } else {
-      // where all the api requests are handled
-      let endpoint = msg.endpoint;
-      // special cases for special endpoints
-      if (endpoint.includes("{SLACK_ID}")) {
-        endpoint = endpoint.replace("{SLACK_ID}", slackId);
-      }
-      if (endpoint.includes("{YOUR_SECRET_TOKEN}")) {
-        endpoint = endpoint.replace("{YOUR_SECRET_TOKEN}", accessToken);
-      }
-      if (endpoint.includes("{WAKATIME_API_KEY}")) {
-        endpoint = endpoint.replace("{WAKATIME_API_KEY}", wakatimeApiKey);
-      }
-      if (endpoint.includes("{USER_ID}")) {
-        endpoint = endpoint.replace("{USER_ID}", userId);
-      }
-      console.log(
-        "Making API request to endpoint:",
-        endpoint,
-        "with ID:",
-        msg.id,
-      );
-      console.log("fetching from: https://hackatime.hackclub.com/" + endpoint);
-      fetch("https://hackatime.hackclub.com/" + endpoint, {
-        headers: {
-          Authorization: `Bearer ${
-            msg.useWakatimeAuth ? wakatimeApiKey : accessToken
-          }`,
-        },
-      })
-        .then((response) => {
-          if (!response.ok) {
-            socket.emit("api_response" + msg.id, {
-              error: `HTTP error! status: ${response.status}`,
-              success: false,
-              id: msg.id,
-            });
-            console.error(
-              `HTTP error! status: ${response.status}. full response:. ID: ${msg.id}`,
-            );
-            throw new Error(
-              `HTTP error! status: ${response.status}. full response:. ID: ${msg.id}`,
-            );
-          } else {
-            return response.json();
-          }
-        })
-        .then((data) => {
-          console.log("API request successful with ID:", msg.id);
+      const clientInfo = {
+        userId: userId,
+        accessToken: accessToken,
+        slackId: slackId,
+        wakatimeApiKey: wakatimeApiKey,
+      };
+      getApis(clientInfo, msg.apiName).then((result) => {
+        if (result.status === "success") {
+         
           socket.emit("api_response" + msg.id, {
-            data,
             success: true,
-            id: msg.id,
+            data: result.data,
           });
-        })
-        .catch((error) => {
-          console.error("Error fetching API data:", error);
+        } else if (result.status === "error") {
+          console.error(
+            "API request",
+            msg.apiName,
+            " failed for user:",
+            userId,
+            "Error:",
+            result.error,
+            "Details:",
+            result.details,
+          );
           socket.emit("api_response" + msg.id, {
-            error: "Failed to fetch API data",
             success: false,
-            id: msg.id,
+            error: result.error,
+            details: result.details,
           });
-        });
+        }
+      });
     }
   });
 
@@ -421,12 +394,13 @@ if (currentServer == "NA") {
       const decryptedToken = decryptToken(loginToken);
       if (decryptedToken) {
         const [userIdFromToken, emailFromToken] = decryptedToken.split(":");
-        if (
-          hackatimeTokens[userIdFromToken] 
-        ) {
+        if (hackatimeTokens[userIdFromToken]) {
           const hackatimeToken =
             hackatimeTokens[userIdFromToken].hackatimeToken;
-            console.log("Sending userid response to EU server for user:", userIdFromToken);
+          console.log(
+            "Sending userid response to EU server for user:",
+            userIdFromToken,
+          );
           recieveEUServer.to(socket.id).emit("login_token_response", {
             success: true,
             hackatimeToken: hackatimeToken,
@@ -434,7 +408,10 @@ if (currentServer == "NA") {
             userId: userIdFromToken,
           });
         } else {
-          console.error("Invalid login token provided from EU server.", decryptedToken);
+          console.error(
+            "Invalid login token provided from EU server.",
+            decryptedToken,
+          );
           recieveEUServer.to(socket.id).emit("login_token_response", {
             success: false,
             error: "Invalid login token",
@@ -445,7 +422,10 @@ if (currentServer == "NA") {
           success: false,
           error: "Failed to decrypt the login token",
         });
-        console.error("Failed to decrypt the login token from EU server.",loginToken);
+        console.error(
+          "Failed to decrypt the login token from EU server.",
+          loginToken,
+        );
       }
     });
 
