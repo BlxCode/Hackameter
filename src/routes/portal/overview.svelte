@@ -69,26 +69,25 @@
         hackatimeData.simpleData.streak !== undefined &&
         hackatimeData.simpleData.streak !== null
       ) {
-        hackatimeData.simpleData.streak = 4;
 
         if (hackatimeData.simpleData.streak >= 60) {
-          streakColor = "#182C46";
-          streakBorderColor = "#315578";
+          streakColor = isDarkMode ? "#182C46" : "#E5F0FC";
+          streakBorderColor = isDarkMode ? "#315578" : "#A9C8EB";
         } else if (hackatimeData.simpleData.streak >= 30) {
-          streakColor = "#453510";
-          streakBorderColor = "#796027";
+          streakColor = isDarkMode ? "#453510" : "#FFF4D6";
+          streakBorderColor = isDarkMode ? "#796027" : "#E8CB83";
         } else if (hackatimeData.simpleData.streak >= 14) {
-          streakColor = "#30204B";
-          streakBorderColor = "#594078";
+          streakColor = isDarkMode ? "#30204B" : "#F1E9FC";
+          streakBorderColor = isDarkMode ? "#594078" : "#CBB5E8";
         } else if (hackatimeData.simpleData.streak >= 7) {
-          streakColor = "#421D19";
-          streakBorderColor = "#78372C";
+          streakColor = isDarkMode ? "#421D19" : "#FCEAE7";
+          streakBorderColor = isDarkMode ? "#78372C" : "#E9B6AD";
         } else if (hackatimeData.simpleData.streak >= 5) {
-          streakColor = "#392719";
-          streakBorderColor = "#704526";
+          streakColor = isDarkMode ? "#392719" : "#F9EEE3";
+          streakBorderColor = isDarkMode ? "#704526" : "#E2C1A0";
         } else {
-          streakColor = "#263B2D";
-          streakBorderColor = "#426B4C";
+          streakColor = isDarkMode ? "#263B2D" : "#E8F5EB";
+          streakBorderColor = isDarkMode ? "#426B4C" : "#B2D7BA";
         }
       }
 
@@ -129,17 +128,15 @@
       ></progress>
     </strong>
   </article>
+
   <article
-    style=" box-shadow:
+    style=" 
+     box-shadow:
       0 0 0 0.0625rem {streakBorderColor}33,
       0 0.0625rem 0.125rem 0 {streakBorderColor}22,
-      0 0.25rem 0.75rem -0.25rem {streakBorderColor}44;color: white !important;background-color: {isDarkMode
-      ? streakColor
-      : streakBorderColor} !important; border: 1.5px solid {isDarkMode
-      ? streakBorderColor
-      : streakColor} !important;"
+      0 0.25rem 0.75rem -0.25rem {streakBorderColor}44;background-color: {streakColor} !important; border: 1.5px solid {streakBorderColor} !important;"
   >
-    <p style="color: white !important;">Current Streak</p>
+    <p >Current Streak</p>
     <strong>{hackatimeData.simpleData.streak || "No data available"}</strong>
   </article>
 </div>
