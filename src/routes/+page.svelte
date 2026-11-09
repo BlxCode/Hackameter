@@ -9,7 +9,7 @@
   onMount(() => {
     async function fetchContinent() {
       setTimeout(() => {
-        if(!whenMounted){
+        if (!whenMounted) {
           continent = "NA";
           whenMounted = true;
         }
@@ -70,7 +70,11 @@
       linkUrl = `${redirectUrl || "https://hackameter.blxm.me"}/portal`;
     } else {
       console.log(continent);
+
       linkUrl = `https://hackatime.hackclub.com/oauth/authorize?client_id=${continent == "EU" ? EU_UID : NA_UID}&redirect_uri=${redirectUrl || "https://hackameter.blxm.me"}%2Fportal&response_type=code&scope=profile+read`;
+      $effect(() => {
+        linkUrl = `https://hackatime.hackclub.com/oauth/authorize?client_id=${continent == "EU" ? EU_UID : NA_UID}&redirect_uri=${redirectUrl || "https://hackameter.blxm.me"}%2Fportal&response_type=code&scope=profile+read`;
+      });
     }
   });
 </script>
