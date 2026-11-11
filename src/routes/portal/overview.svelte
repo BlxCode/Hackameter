@@ -69,7 +69,6 @@
         hackatimeData.simpleData.streak !== undefined &&
         hackatimeData.simpleData.streak !== null
       ) {
-
         if (hackatimeData.simpleData.streak >= 60) {
           streakColor = isDarkMode ? "#182C46" : "#E5F0FC";
           streakBorderColor = isDarkMode ? "#315578" : "#A9C8EB";
@@ -137,7 +136,7 @@
       0 0.25rem 0.75rem -0.25rem {streakBorderColor}44;background-color: {streakColor} !important; border: 1.5px solid {streakBorderColor} !important;"
   >
     <p >Current Streak</p>
-    <strong>{hackatimeData.simpleData.streak || "No data available"}</strong>
+    <strong>{hackatimeData.simpleData.streak} {hackatimeData.simpleData.streak != 1 ? "Days" : "Day"}</strong>
   </article>
 </div>
 

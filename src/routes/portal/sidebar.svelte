@@ -11,7 +11,6 @@
   let imageSrc = $state(
     "https://www.blxm.me/_app/immutable/assets/kakaReder.Dh_f2OKQ.png",
   );
-  console.log("Socket in header.svelte:", socket);
 $effect(() => {
     if (hackatimeData.simpleData.userName) {
       userName.data = hackatimeData.simpleData.userName;
