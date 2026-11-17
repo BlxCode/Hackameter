@@ -2,9 +2,9 @@
   import {
     hackatimeData,
     apiRequest,
-    socket,
     authenticated,
   } from "./main.svelte";
+  import { socket } from "./initiateSocket.svelte";
   const userName = $state({ data: "Username Not Found" });
   let { changeDashboard, currentDashboard } = $props();
 
@@ -54,6 +54,14 @@ $effect(() => {
           aria-current={currentDashboard === "achievements" ? "page" : "none"}
           class={currentDashboard === "achievements" ? "outline" : ""}
           onclick={(e) => changeDashboard("achievements")}>Achievements</a
+        >
+      </li>
+       <li>
+        <a
+          href=""
+          aria-current={currentDashboard === "bigGoals" ? "page" : "none"}
+          class={currentDashboard === "bigGoals" ? "outline" : ""}
+          onclick={(e) => changeDashboard("bigGoals")}>Big Goals</a
         >
       </li>
     </ul>

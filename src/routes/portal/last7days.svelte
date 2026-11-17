@@ -47,11 +47,21 @@
         "No data available";
       trend = hackatimeData.simpleData.weeklyTrend + "%" || "No data available";
       if (trendIncreaseOrDecrease === "increase") {
-        trendColor = isDarkMode ? "#263B2D" : "#E8F5EB";
-        trendBorderColor = isDarkMode ? "#426B4C" : "#B2D7BA";
+        if (Number(hackatimeData.simpleData.weeklyTrend) > 5) {
+          trendColor = isDarkMode ? "#263B2D" : "#E8F5EB";
+          trendBorderColor = isDarkMode ? "#426B4C" : "#B2D7BA";
+        } else {
+          trendColor = "var(--pico-card-background-color)";
+          trendBorderColor = "var(--pico-card-border-color)";
+        }
       } else if (trendIncreaseOrDecrease === "decrease") {
-        trendColor = isDarkMode ? "#421D19" : "#FCEAE7";
-        trendBorderColor = isDarkMode ? "#78372C" : "#E9B6AD";
+        if (Number(hackatimeData.simpleData.weeklyTrend) > 5) {
+          trendColor = isDarkMode ? "#421D19" : "#FCEAE7";
+          trendBorderColor = isDarkMode ? "#78372C" : "#E9B6AD";
+        } else {
+          trendColor = "var(--pico-card-background-color)";
+          trendBorderColor = "var(--pico-card-border-color)";
+        }
       } else {
         trendColor = "var(--pico-card-background-color)";
         trendBorderColor = "var(--pico-card-border-color)";

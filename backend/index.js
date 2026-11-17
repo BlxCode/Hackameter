@@ -23,6 +23,8 @@ if (currentServer == "NA") {
   const sixtyDaysAgo = new Date(Date.now() - 60 * 24 * 60 * 60 * 1000); // 60 days in milliseconds
   setInterval(
     () => {
+      const sixtyDaysAgo = new Date(Date.now() - 60 * 24 * 60 * 60 * 1000); // 60 days in milliseconds
+
       for (const userId of Object.keys(hackatimeTokens)) {
         const tokenData = hackatimeTokens[userId];
         const timestamp = tokenData.timestamp;
@@ -66,6 +68,7 @@ if (currentServer == "NA") {
     console.log("Disconnected from NA server:", reason);
   });
 }
+let apisFetchedLastHalfMinute = {};
 
 const server = new Server({
   path: "/hackameter/",
@@ -180,14 +183,16 @@ server.on("connection", (socket) => {
             loginToken: msg.loginToken,
             socketId: socket.id,
           });
-          NAServer.on("login_token_response", (response) => {
+          NAServer.once("login_token_response", (response) => {
             if (response.success) {
-              accessToken = decryptToken(response.hackatimeToken);
-              userId = response.userId;
-              console.log(
-                "Successfully authenticated with Login Token. Redirecting to portal...",
-              );
-              getWakatimeApiKey();
+              if (response.id == socket.id) {
+                accessToken = decryptToken(response.hackatimeToken);
+                userId = response.userId;
+                console.log(
+                  "Successfully authenticated with Login Token. Redirecting to portal...",
+                );
+                getWakatimeApiKey();
+              }
             } else {
               console.error("Invalid login token provided. ");
               socket.emit("auth_response", {
@@ -340,44 +345,94 @@ server.on("connection", (socket) => {
       });
       return;
     } else {
-      const clientInfo = {
-        userId: userId,
-        accessToken: accessToken,
-        slackId: slackId,
-        wakatimeApiKey: wakatimeApiKey,
-      };
-      getApis(clientInfo, msg.apiName).then((result) => {
-        if (result.status === "success") {
-         
+      console.log("Received API request for user:", userId, "ID:", userId);
+      if (userId == userId) {
+        const clientInfo = {
+          userId: userId,
+          accessToken: accessToken,
+          slackId: slackId,
+          wakatimeApiKey: wakatimeApiKey,
+        };
+        if (
+          apisFetchedLastHalfMinute[userId] == undefined ||
+          apisFetchedLastHalfMinute[userId] == null
+        ) {
+          apisFetchedLastHalfMinute[userId] = {};
+          apisFetchedLastHalfMinute[userId][msg.apiName] = null;
+        }
+        // rate limit api
+        if (
+          (apisFetchedLastHalfMinute[userId][msg.apiName] != undefined &&
+            apisFetchedLastHalfMinute[userId][msg.apiName] != null &&
+            apisFetchedLastHalfMinute[userId][msg.apiName] &&
+            Date.now() -
+              apisFetchedLastHalfMinute[userId][msg.apiName].apiFetchedAt >
+              15000) ||
+          !apisFetchedLastHalfMinute[userId][msg.apiName]
+        ) {
+          getApis(clientInfo, msg.apiName).then((result) => {
+            if (result.status === "success") {
+              apisFetchedLastHalfMinute[userId][msg.apiName] = {
+                apiFetchedAt: Date.now(),
+                data: result.data,
+              };
+
+              socket.emit("api_response" + msg.id, {
+                success: true,
+                data: result.data,
+              });
+            } else if (result.status === "error") {
+              console.error(
+                "API request",
+                msg.apiName,
+                " failed for user:",
+                userId,
+                "Error:",
+                result.error,
+                "Details:",
+                result.details,
+              );
+              socket.emit("api_response" + msg.id, {
+                success: false,
+                error: result.error,
+                details: result.details,
+              });
+            }
+          });
+        } else {
           socket.emit("api_response" + msg.id, {
             success: true,
-            data: result.data,
-          });
-        } else if (result.status === "error") {
-          console.error(
-            "API request",
-            msg.apiName,
-            " failed for user:",
-            userId,
-            "Error:",
-            result.error,
-            "Details:",
-            result.details,
-          );
-          socket.emit("api_response" + msg.id, {
-            success: false,
-            error: result.error,
-            details: result.details,
+            data: apisFetchedLastHalfMinute[userId][msg.apiName].data,
           });
         }
-      });
+      } else {
+        console.error(
+          "User ID mismatch. API request userId:",
+          userId,
+          "Authenticated userId:",
+          userId,
+        );
+        socket.emit("api_response" + msg.id, {
+          success: false,
+          error: "User ID mismatch",
+        });
+      }
     }
+  });
+
+  socket.on("ping", (msg) => {
+    socket.emit("pong", { message: "pong" });
   });
 
   socket.on("disconnect", () => {
     console.log("user disconnected", socket.id);
     currUsers--;
     console.log("current users:", currUsers);
+    setTimeout(() => {
+      if (userId && apisFetchedLastHalfMinute[userId]) {
+        delete apisFetchedLastHalfMinute[userId];
+      }
+    }, 120000);
   });
 });
 
@@ -389,7 +444,7 @@ if (currentServer == "NA") {
       socket.disconnect();
       return;
     }
-    socket.on("check_login_token", (msg) => {
+    socket.on("check_login_token" + socket.id, (msg) => {
       const { loginToken } = msg;
       const decryptedToken = decryptToken(loginToken);
       if (decryptedToken) {
@@ -401,24 +456,21 @@ if (currentServer == "NA") {
             "Sending userid response to EU server for user:",
             userIdFromToken,
           );
-          recieveEUServer.to(socket.id).emit("login_token_response", {
+          recieveEUServer.to(socket.id).emit("login_token_response"+msg.socketId, {
             success: true,
             hackatimeToken: hackatimeToken,
-
+            id: msg.socketId,
             userId: userIdFromToken,
           });
         } else {
-          console.error(
-            "Invalid login token provided from EU server.",
-            decryptedToken,
-          );
-          recieveEUServer.to(socket.id).emit("login_token_response", {
+        console.error("invalid login token from eu server")
+          recieveEUServer.to(socket.id).emit("login_token_response"+msg.socketId, {
             success: false,
             error: "Invalid login token",
           });
         }
       } else {
-        recieveEUServer.to(socket.id).emit("login_token_response", {
+        recieveEUServer.to(socket.id).emit("login_token_response"+msg.socketId, {
           success: false,
           error: "Failed to decrypt the login token",
         });

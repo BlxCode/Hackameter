@@ -1,5 +1,4 @@
 <script module>
-  import { io } from "socket.io-client";
   console.log("Initializing socket connection...");
   import { dev } from "$app/env";
   import { v4 as uuidv4 } from "uuid";
@@ -8,43 +7,19 @@
   import Dashboard from "./dashboard.svelte";
   import Achievements from "./achievements.svelte";
   let menuClicked = $state(false);
-  let connected = $state(false);
   import ApiRequests from "./apiRequests.svelte";
+  import { socket } from "./initiateSocket.svelte";
+  import {connected} from "./initiateSocket.svelte";
+  import BigGoals from "./biggoals.svelte";
   const Dashboards = {
     overview: Dashboard,
 
     achievements: Achievements,
+    bigGoals: BigGoals,
   };
 
-  async function getContinent() {
-    try {
-      const response = await fetch("https://get.geojs.io/v1/ip/geo.json");
-
-      if (!response.ok) {
-        throw new Error(`GeoJS returned ${response.status}`);
-      }
-
-      const data = await response.json();
-
-      console.log("Current Continent:", data.continent_code);
-
-      const continentMap = {
-        NA: "NA",
-        EU: "EU",
-        AS: "EU",
-        SA: "NA",
-        AF: "EU",
-        OC: "NA",
-        AN: "NA",
-      };
-
-      return continentMap[data.continent_code] ?? "NA";
-    } catch (error) {
-      console.error("Continent detection failed:", error);
-      return "NA";
-    }
-  }
-export const dashboardCurrentlyShown = $state({data: "overview"});
+ 
+  export const dashboardCurrentlyShown = $state({ data: "overview" });
   let currentDashboard = $state("overview");
   let DashboardToRender = $derived(Dashboards[currentDashboard]);
 
@@ -66,39 +41,9 @@ export const dashboardCurrentlyShown = $state({data: "overview"});
   // socket init
   console.log("Mounting socket connection...");
 
-  const continent = await getContinent();
 
-  console.log("Selected region:", continent);
 
-  const url = dev
-    ? "http://localhost:3068"
-    : continent === "NA"
-      ? "https://test-api.blxm.me"
-      : "https://nest-api.blxm.me";
 
-  export const socket = io(url, {
-    path: "/hackameter",
-    autoConnect: true,
-    transports: ["websocket"],
-  });
-
-  setTimeout(() => {
-    if (!socket.connected) {
-      console.error(
-        "Socket connection failed to ",
-        url,
-        " Please check your internet connection or try a vpn to connect to the other server again later.",
-      );
-      connected = false;
-    }
-  }, 5000);
-  socket.on("connect", () => {
-    console.log("Connected to server via socket.io");
-    connected = true;
-  });
-  socket.on("alert", (msg) => {
-    console.log(msg);
-  });
   // AUTHENTICATOR
   socket.on("auth_response", (data) => {
     if (data.success) {
@@ -111,8 +56,15 @@ export const dashboardCurrentlyShown = $state({data: "overview"});
     } else {
       authenticated.value = false;
       console.error("Authentication failed:", data.error);
-      if (data.error == "Invalid login token") {
+      if (data.error == "Invalid login token" || data.error == "Failed to decrypt the login token") {
+        localStorage.setItem("failedLoginTokenTimes",Number(localStorage.getItem("failedLoginTokenTimes") || 0) + 1);
         localStorage.removeItem("loginToken");
+        location.reload();
+      }
+      if(localStorage.getItem("failedLoginTokenTimes") && Number(localStorage.getItem("failedLoginTokenTimes")) > 3){
+        localStorage.removeItem("loginToken");
+        localStorage.removeItem("failedLoginTokenTimes");
+        alert("Your login token has failed to authenticate multiple times. Please tell me via slack or smth. this bug shouldn't be encountered.");
         location.reload();
       }
     }
@@ -170,7 +122,7 @@ export const dashboardCurrentlyShown = $state({data: "overview"});
   // responsive stuff
 </script>
 
-<dialog style="z-index: 1000;" open={!connected} id="dialog" role="dialog">
+<dialog style="z-index: 1000;" open={!connected.value} id="dialog" role="dialog">
   <strong>Server has failed to connect. Notes: {socket}</strong>
 </dialog>
 <div id="portal-container">
@@ -185,6 +137,7 @@ export const dashboardCurrentlyShown = $state({data: "overview"});
   </main>
 </div>
 <ApiRequests />
+
 <style>
   @media (width <= 1000px) {
     aside {

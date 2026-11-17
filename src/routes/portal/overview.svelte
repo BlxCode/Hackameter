@@ -135,8 +135,11 @@
       0 0.0625rem 0.125rem 0 {streakBorderColor}22,
       0 0.25rem 0.75rem -0.25rem {streakBorderColor}44;background-color: {streakColor} !important; border: 1.5px solid {streakBorderColor} !important;"
   >
-    <p >Current Streak</p>
-    <strong>{hackatimeData.simpleData.streak} {hackatimeData.simpleData.streak != 1 ? "Days" : "Day"}</strong>
+    <p>Current Streak</p>
+    <strong
+      >{hackatimeData.simpleData.streak}
+      {hackatimeData.simpleData.streak != 1 ? "Days" : "Day"}</strong
+    >
   </article>
 </div>
 

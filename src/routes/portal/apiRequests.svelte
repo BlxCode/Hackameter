@@ -1,19 +1,25 @@
-<script>
+<script module>
   import {
     hackatimeData,
     apiRequest,
-    socket,
     authenticated,
     dashboardCurrentlyShown,
   } from "./main.svelte";
+  import { socket } from "./initiateSocket.svelte";
   import { dev } from "$app/env";
   let apisAllFetched = $state(false);
-  $effect(() => {
-    if (socket.connected && authenticated.value && !apisAllFetched) {
+  export const apisFetched = $state({
+    dashboard: false,
+  });
+  socket.on("auth_response", (data) => {
+
+    if (data.success) {
+      setTimeout( ()=>{
       apiRequest("dashboard").then((apiId) => {
         console.log("API request sent with ID:", apiId);
         if (apiId) {
           if (hackatimeData.apiRequests[apiId].success) {
+            apisFetched.dashboard = true;
             dev ? console.log("toltal time:", hackatimeData.data[apiId]) : null;
             hackatimeData.simpleData["totalTime"] =
               hackatimeData.data[apiId][
@@ -97,7 +103,9 @@
             console.log("twoWeeksAgoTotal:", twoWeeksAgoTotal);
             let trend = "No data available";
             if (lastWeeksAverage > 0) {
-              trend = Math.abs((thisWeekTotal - lastWeeksAverage) / lastWeeksAverage);
+              trend = Math.abs(
+                (thisWeekTotal - lastWeeksAverage) / lastWeeksAverage,
+              );
               trend = trend * 100;
               trend = trend.toFixed(1);
               console.log("trend:", trend);
@@ -119,6 +127,9 @@
           }
         }
       });
+
+    },200);
+
     }
   });
 </script>
