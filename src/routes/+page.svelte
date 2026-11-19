@@ -2,57 +2,15 @@
   import STONKS from "#lib/assets/STONKS.png";
   import { onMount } from "svelte";
 
-  let continent = $state("NA");
   let redirectUrl = $state();
   let linkUrl = $state();
   let whenMounted = $state(false);
+ import { server } from "./getContinent.svelte";
   onMount(() => {
-    async function fetchContinent() {
-      setTimeout(() => {
-        if (!whenMounted) {
-          continent = "NA";
-          whenMounted = true;
-        }
-      }, 500);
-      fetch("https://get.geojs.io/v1/ip/geo.json")
-        .then((response) => response.json())
-        .then((data) => {
-          console.log("Current Continent:", data.continent_code);
-          switch (data.continent_code) {
-            case "NA":
-              continent = "NA";
-              break;
-            case "EU":
-              continent = "EU";
-              break;
-            case "AS":
-              continent = "EU";
-              break;
-            case "SA":
-              continent = "NA";
-              break;
-            case "AF":
-              continent = "EU";
-              break;
-            case "OC":
-              continent = "NA";
-              break;
-            case "AN":
-              continent = "NA";
-              break;
-            default:
-              continent = "NA";
-              break;
-          }
-          console.log(continent);
-
-          whenMounted = true;
-        });
-    }
+    //get continent actually now gets the closest server
+  
     const NA_UID = import.meta.env.VITE_NA_UID;
-    const EU_UID = import.meta.env.VITE_EU_UID;
 
-    fetchContinent();
 
     redirectUrl = window.location.origin;
     if (localStorage.getItem("loginToken")) {
@@ -69,11 +27,10 @@
       }
       linkUrl = `${redirectUrl || "https://hackameter.blxm.me"}/portal`;
     } else {
-      console.log(continent);
 
-      linkUrl = `https://hackatime.hackclub.com/oauth/authorize?client_id=${continent == "EU" ? EU_UID : NA_UID}&redirect_uri=${redirectUrl || "https://hackameter.blxm.me"}%2Fportal&response_type=code&scope=profile+read`;
+      linkUrl = `https://hackatime.hackclub.com/oauth/authorize?client_id=${ NA_UID}&redirect_uri=${redirectUrl || "https://hackameter.blxm.me"}%2Fportal&response_type=code&scope=profile+read`;
       $effect(() => {
-        linkUrl = `https://hackatime.hackclub.com/oauth/authorize?client_id=${continent == "EU" ? EU_UID : NA_UID}&redirect_uri=${redirectUrl || "https://hackameter.blxm.me"}%2Fportal&response_type=code&scope=profile+read`;
+        linkUrl = `https://hackatime.hackclub.com/oauth/authorize?client_id=${ NA_UID}&redirect_uri=${redirectUrl || "https://hackameter.blxm.me"}%2Fportal&response_type=code&scope=profile+read`;
       });
     }
   });
@@ -95,7 +52,7 @@
       aria-busy={!whenMounted}
       class="primary"
       data-tooltip={whenMounted
-        ? `Connecting to ${continent} server...`
+        ? `Connecting to ${server} server...`
         : "Loading..."}
     >
       Enter HackaMeter</button

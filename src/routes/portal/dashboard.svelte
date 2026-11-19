@@ -35,6 +35,26 @@
     "Your coding performance, tracked.",
     "Your coding achievements, celebrated.",
     "Thanks AI for these random phrases.",
+    "Thanks AI for the streak, trend, etc color scheme thingys.",
+    "Did you go through all of them?",
+    "The backend is coded in Node.js!",
+    "Unfourtunately, not in rust.",
+    "The frontend is coded in Svelte! Quit react bro.",
+    "The source code is public... if you can find it.",
+    "Go subscribe to my youtube channel... if you can find it.",
+    "inline suggestions are annoying me so much while making these",
+    "The file structure for this is soo cooked vro.",
+    "what's the capital of france? oh oui oui oui, it is paris. merci.",
+    "Are you a bot?",
+    "TY nest for the eu server.",
+    "TY my old chromebook for the na server.",
+  "made by a profetional idiot 🤓",
+  "instead of grinding for the pirate token, i'm grinding hackameter.",
+  "please dont ddos me or anything.",
+  "follow the hackclub code of conduct.",
+  "if you have any questions, dm me on (@blxm) slack.",
+  "if you have any questions, dont dm me on discord.",
+
   ];
   let pickedWelcomeWord =
     randomWelcomeWords[Math.floor(Math.random() * randomWelcomeWords.length)];

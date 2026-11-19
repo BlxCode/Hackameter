@@ -1,12 +1,21 @@
 
 <script>
+  import { hackatimeData } from "./main.svelte";
   let { menuClicked = $bindable(false) } = $props();
-
+  let xpAmt = $state()
+if (hackatimeData.customData && hackatimeData.customData.xp) {
+  xpAmt = hackatimeData.customData.xp;
+} else {
+  xpAmt = 0;
+}
 </script>
 <div style="width: fit-content;">
 <button onclick = {() => { menuClicked = !menuClicked; }}  id="menu" class="secondary" style="margin:0.5rem; display:none;">Menu</button>
     <h1 style="margin-top:auto;margin-bottom:auto;">HackaMeter</h1>
   <div style=" position: absolute; right: 1rem; display: flex; gap: 0.5rem;" id="portal-header-buttons">
+  <button >
+   {xpAmt} XP
+  </button>
     <button class="secondary">Settings</button>
     <button class="outline secondary">Logout</button>
   </div>

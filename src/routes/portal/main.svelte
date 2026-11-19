@@ -125,6 +125,9 @@
 <dialog style="z-index: 1000;" open={!connected.value} id="dialog" role="dialog">
   <strong>Server has failed to connect. Notes: {socket}</strong>
 </dialog>
+<div id="popups">
+<div id = "backdrop"></div>
+</div>
 <div id="portal-container">
   <header style="padding: 0.5rem;" id="top">
     <Header bind:menuClicked />
@@ -150,6 +153,25 @@
       width: 235px;
       height: calc(100vh - 90px + 0.1rem);
       box-shadow: 2rem 0 1rem rgba(0, 0, 0, 0.1);
+    }
+    #popups {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      z-index: 9999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999;
+
+
+    }
+    #backdrop {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background-color: rgba(0, 0, 0, 0.5);
+      z-index:999;
     }
     #portal-container {
       grid-template-areas:
