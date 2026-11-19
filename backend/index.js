@@ -183,7 +183,8 @@ server.on("connection", (socket) => {
             loginToken: msg.loginToken,
             socketId: socket.id,
           });
-          NAServer.once("login_token_response", (response) => {
+          NAServer.once("login_token_response"+socket.id, (response) => {
+            console.log("Received response from NA server:");
             if (response.success) {
               if (response.id == socket.id) {
                 accessToken = decryptToken(response.hackatimeToken);
@@ -444,7 +445,7 @@ if (currentServer == "NA") {
       socket.disconnect();
       return;
     }
-    socket.on("check_login_token" + socket.id, (msg) => {
+    socket.on("check_login_token", (msg) => {
       const { loginToken } = msg;
       const decryptedToken = decryptToken(loginToken);
       if (decryptedToken) {

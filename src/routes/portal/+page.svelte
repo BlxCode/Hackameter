@@ -25,12 +25,12 @@
     currentUrl = window.location.href;
     // if user dosnt have code and first time in this site
     if (
-      localStorage.getItem("loginToken") &&
-      localStorage.getItem("loginToken") != "" &&
-      localStorage.getItem("loginToken") != null &&
-      localStorage.getItem("loginToken") != undefined
+      sessionStorage.getItem("loginToken") &&
+      sessionStorage.getItem("loginToken") != "" &&
+      sessionStorage.getItem("loginToken") != null &&
+      sessionStorage.getItem("loginToken") != undefined
     ) {
-      socket.emit("auth", { loginToken: localStorage.getItem("loginToken") });
+      socket.emit("auth", { loginToken: sessionStorage.getItem("loginToken") });
 
       socket.on("auth_response", (data) => {
         if (data.success) {
@@ -57,7 +57,7 @@
       });
     } else if (
       currentUrl.includes("code=") == false &&
-      !localStorage.getItem("loginToken")
+      !sessionStorage.getItem("loginToken")
     ) {
       window.location.href = dev
         ? "http://localhost:5173"
@@ -95,7 +95,7 @@
             data.loginToken != null &&
             data.loginToken != ""
           ) {
-            localStorage.setItem("loginToken", data.loginToken);
+            sessionStorage.setItem("loginToken", data.loginToken);
           }
           window.location.href = dev
             ? "http://localhost:5173/portal"
@@ -111,7 +111,7 @@
             return;
           }
           if (data.error == "Invalid login token") {
-            localStorage.removeItem("loginToken");
+            sessionStorage.removeItem("loginToken");
             alert("Invalid login token. Please try logging in again.");
 
             window.location.href = dev
@@ -147,11 +147,11 @@
         );
       }
     } else if (
-      localStorage.getItem("loginToken") == null ||
-      localStorage.getItem("loginToken") == undefined ||
-      localStorage.getItem("loginToken") == ""
+      sessionStorage.getItem("loginToken") == null ||
+      sessionStorage.getItem("loginToken") == undefined ||
+      sessionStorage.getItem("loginToken") == ""
     ) {
-      localStorage.removeItem("loginToken");
+      sessionStorage.removeItem("loginToken");
       window.location.href = dev
         ? "http://localhost:5173"
         : "https://hackameter.blxm.me";

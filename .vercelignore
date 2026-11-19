@@ -4,3 +4,6 @@
 backend.js
 .flaskenv*
 !.env.project
+backend
+tokens.json
+backend/tokens.json

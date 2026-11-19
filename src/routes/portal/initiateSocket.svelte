@@ -1,51 +1,32 @@
 <script module>
   import { io } from "socket.io-client";
   import { dev } from "$app/env";
+  import { browser } from "$app/env";
+
   export const connected = $state({ value: false });
   //get continent actually now gets the closest server
-  async function getContinent() {
-    return new Promise((resolve) => {
-      let connected = false;
-
-      const naServer = io("https://test-api.blxm.me", {
-        path: "/hackameter",
-        transports: ["websocket"],
-        reconnection: false,
-      });
-
-      const euServer = io("https://nest-api.blxm.me", {
-        path: "/hackameter",
-        transports: ["websocket"],
-        reconnection: false,
-      });
-
-      const finish = (region) => {
-        if (connected) return;
-
-        connected = true;
-
-        naServer.disconnect();
-        euServer.disconnect();
-
-        clearTimeout(timeout);
-        resolve(region);
-      };
-
-      naServer.on("connect", () => finish("NA"));
-      euServer.on("connect", () => finish("EU"));
-
-      const timeout = setTimeout(() => {
-        if (!connected) {
-          console.error(
-            "Continent detection timed out. No servers could be reached",
-          );
-          finish("N/A");
-        }
-      }, 5000);
-    });
+ async function getContinent() {
+    const params = browser
+      ? new URLSearchParams(window.location.search)
+      : new URLSearchParams();
+    if (params.has("server")) {
+      const serverParam = params.get("server");
+      if (serverParam === "NA" || serverParam === "EU") {
+        console.log("Server parameter provided:", serverParam);
+        return serverParam;
+      } else {
+        console.warn(
+          "Invalid server parameter provided. Defaulting to NA server.",
+        );
+        return "NA";
+      }
+    }
+    console.log(
+      "No server parameter provided. Defaulting to NA server. If you are in Europe, please use the EU server by adding ?server=EU to the URL.",
+    );
+    return "NA";
   }
-  const continent = await getContinent();
-
+const continent = browser ? getContinent() : null;
   console.log("Selected region:", continent);
 
   const url = dev

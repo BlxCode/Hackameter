@@ -11,13 +11,13 @@
     const NA_UID = import.meta.env.VITE_NA_UID;
     console.log("Server detected:", server);
     redirectUrl = window.location.origin;
-    if (localStorage.getItem("loginToken")) {
+    if (sessionStorage.getItem("loginToken")) {
       if (
-        localStorage.getItem("loginToken") == null ||
-        localStorage.getItem("loginToken") == undefined ||
-        localStorage.getItem("loginToken") == ""
+        sessionStorage.getItem("loginToken") == null ||
+        sessionStorage.getItem("loginToken") == undefined ||
+        sessionStorage.getItem("loginToken") == ""
       ) {
-        localStorage.removeItem("loginToken");
+        sessionStorage.removeItem("loginToken");
         window.location.href = dev
           ? "http://localhost:5173"
           : "https://hackameter.blxm.me";

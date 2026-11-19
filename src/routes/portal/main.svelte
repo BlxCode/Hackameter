@@ -57,13 +57,13 @@
       authenticated.value = false;
       console.error("Authentication failed:", data.error);
       if (data.error == "Invalid login token" || data.error == "Failed to decrypt the login token") {
-        localStorage.setItem("failedLoginTokenTimes",Number(localStorage.getItem("failedLoginTokenTimes") || 0) + 1);
-        localStorage.removeItem("loginToken");
+        sessionStorage.setItem("failedLoginTokenTimes",Number(sessionStorage.getItem("failedLoginTokenTimes") || 0) + 1);
+        sessionStorage.removeItem("loginToken");
         location.reload();
       }
-      if(localStorage.getItem("failedLoginTokenTimes") && Number(localStorage.getItem("failedLoginTokenTimes")) > 3){
-        localStorage.removeItem("loginToken");
-        localStorage.removeItem("failedLoginTokenTimes");
+      if(sessionStorage.getItem("failedLoginTokenTimes") && Number(sessionStorage.getItem("failedLoginTokenTimes")) > 3){
+        sessionStorage.removeItem("loginToken");
+        sessionStorage.removeItem("failedLoginTokenTimes");
         alert("Your login token has failed to authenticate multiple times. Please tell me via slack or smth. this bug shouldn't be encountered.");
         location.reload();
       }
@@ -126,7 +126,7 @@
   <strong>Server has failed to connect. Notes: {socket}</strong>
 </dialog>
 <div id="popups">
-<div id = "backdrop"></div>
+<div id = "backdrop" hidden></div>
 </div>
 <div id="portal-container">
   <header style="padding: 0.5rem;" id="top">
