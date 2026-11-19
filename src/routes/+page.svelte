@@ -1,17 +1,15 @@
 <script>
-  import STONKS from "#lib/assets/STONKS.png";
   import { onMount } from "svelte";
 
   let redirectUrl = $state();
   let linkUrl = $state();
   let whenMounted = $state(false);
- import { server } from "./getContinent.svelte";
+  import { server } from "./getContinent.svelte";
   onMount(() => {
     //get continent actually now gets the closest server
-  
+
     const NA_UID = import.meta.env.VITE_NA_UID;
-
-
+    console.log("Server detected:", server);
     redirectUrl = window.location.origin;
     if (localStorage.getItem("loginToken")) {
       if (
@@ -25,12 +23,29 @@
           : "https://hackameter.blxm.me";
         return;
       }
-      linkUrl = `${redirectUrl || "https://hackameter.blxm.me"}/portal`;
-    } else {
+      whenMounted = true;
 
-      linkUrl = `https://hackatime.hackclub.com/oauth/authorize?client_id=${ NA_UID}&redirect_uri=${redirectUrl || "https://hackameter.blxm.me"}%2Fportal&response_type=code&scope=profile+read`;
+      linkUrl = `${redirectUrl || "https://hackameter.blxm.me"}/portal?server=${server}`;
+    } else {
+      whenMounted = true;
+
+      const params = new URLSearchParams({
+        client_id: NA_UID,
+        redirect_uri: `${redirectUrl}/portal`,
+        response_type: "code",
+        scope: "profile read",
+      });
+
+      linkUrl = `https://hackatime.hackclub.com/oauth/authorize?${params}`;
       $effect(() => {
-        linkUrl = `https://hackatime.hackclub.com/oauth/authorize?client_id=${ NA_UID}&redirect_uri=${redirectUrl || "https://hackameter.blxm.me"}%2Fportal&response_type=code&scope=profile+read`;
+        const params = new URLSearchParams({
+          client_id: NA_UID,
+          redirect_uri: `${redirectUrl}/portal`,
+          response_type: "code",
+          scope: "profile read",
+        });
+
+        linkUrl = `https://hackatime.hackclub.com/oauth/authorize?${params}`;
       });
     }
   });
@@ -52,7 +67,7 @@
       aria-busy={!whenMounted}
       class="primary"
       data-tooltip={whenMounted
-        ? `Connecting to ${server} server...`
+        ? `Connected to ${server} server...`
         : "Loading..."}
     >
       Enter HackaMeter</button
