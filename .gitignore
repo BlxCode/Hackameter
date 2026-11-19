@@ -13,7 +13,7 @@ node_modules
 Thumbs.db
 .vscode
 deploy.sh
-
+.vscode
 # Env
 .env
 .env.*
