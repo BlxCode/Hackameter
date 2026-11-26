@@ -127,7 +127,11 @@
       ></progress>
     </strong>
   </article>
-
+<article>
+<p>Top Project</p>
+    <strong>{hackatimeData.simpleData.topProject || "No data available"}</strong><br>
+    <small class="muted">{formatTime(hackatimeData.simpleData.topProjectTime) || "No data available"}</small>
+  </article>
   <article
     style=" 
      box-shadow:

@@ -85,7 +85,28 @@ const server = new Server({
   },
 });
 let currUsers = 0;
-
+let hackaMeterData = {};
+if (currentServer == "NA") {
+  hackaMeterData = JSON.parse(fs.readFileSync("./hkmData.json", "utf8"));
+  setInterval(() => {
+    fs.writeFileSync(
+      "./hkmData.json",
+      JSON.stringify(hackaMeterData, null, 2),
+    );
+  }, 60000);
+} else if (currentServer == "EU") {
+  NAServer.on("update_hackameter_data", (msg) => {
+    if (msg.success) {
+      const { userId, data } = msg;
+      hackaMeterData[userId] = data;
+    } else {
+      console.error(
+        "Failed to update hackameter data from NA server:",
+        msg.error,
+      );
+    }
+  });
+}
 server.on("connection", (socket) => {
   let accessToken = null;
   let loginToken = null;
@@ -169,6 +190,13 @@ server.on("connection", (socket) => {
               "Successfully authenticated with Login Token. Redirecting to portal...",
             );
             getWakatimeApiKey();
+            if (!hackaMeterData[userId]) {
+              hackaMeterData[userId] = {
+                joinedAt: Date.now(),
+                points: 0,
+                bigGoals: {},
+              };
+            }
           } else {
             console.error("Invalid login token provided.");
             socket.emit("auth_response", {
@@ -183,7 +211,7 @@ server.on("connection", (socket) => {
             loginToken: msg.loginToken,
             socketId: socket.id,
           });
-          NAServer.once("login_token_response"+socket.id, (response) => {
+          NAServer.once("login_token_response" + socket.id, (response) => {
             console.log("Received response from NA server:");
             if (response.success) {
               if (response.id == socket.id) {
@@ -193,6 +221,7 @@ server.on("connection", (socket) => {
                   "Successfully authenticated with Login Token. Redirecting to portal...",
                 );
                 getWakatimeApiKey();
+                NAServer.emit("hackameter_data_request", { userId: userId });
               }
             } else {
               console.error("Invalid login token provided. ");
@@ -406,6 +435,8 @@ server.on("connection", (socket) => {
             data: apisFetchedLastHalfMinute[userId][msg.apiName].data,
           });
         }
+
+        // hcm data
       } else {
         console.error(
           "User ID mismatch. API request userId:",
@@ -421,7 +452,7 @@ server.on("connection", (socket) => {
     }
   });
 
-  socket.on("ping", (msg) => {
+  socket.on("ping", () => {
     socket.emit("pong", { message: "pong" });
   });
 
@@ -445,6 +476,34 @@ if (currentServer == "NA") {
       socket.disconnect();
       return;
     }
+    socket.on("hackameter_data_request", (msg) => {
+      const { userId } = msg;
+      if (hackaMeterData[userId]) {
+        console.log(
+          "Sending hackameter data response to EU server for user:",
+          userId,
+        );
+        recieveEUServer.to(socket.id).emit("update_hackameter_data", {
+          success: true,
+          data: hackaMeterData[userId],
+          id: msg.socketId,
+          userId: userId,
+        });
+      } else {
+        if (!hackaMeterData[userId]) {
+          hackaMeterData[userId] = {
+            joinedAt: Date.now(),
+            points: 0,
+            bigGoals: {},
+          };
+        }
+        console.error("No hackameter data found for user:", userId);
+        recieveEUServer.to(socket.id).emit("update_hackameter_data", {
+          success: false,
+          error: "No hackameter data found for the user",
+        });
+      }
+    });
     socket.on("check_login_token", (msg) => {
       const { loginToken } = msg;
       const decryptedToken = decryptToken(loginToken);
@@ -457,24 +516,30 @@ if (currentServer == "NA") {
             "Sending userid response to EU server for user:",
             userIdFromToken,
           );
-          recieveEUServer.to(socket.id).emit("login_token_response"+msg.socketId, {
-            success: true,
-            hackatimeToken: hackatimeToken,
-            id: msg.socketId,
-            userId: userIdFromToken,
-          });
+          recieveEUServer
+            .to(socket.id)
+            .emit("login_token_response" + msg.socketId, {
+              success: true,
+              hackatimeToken: hackatimeToken,
+              id: msg.socketId,
+              userId: userIdFromToken,
+            });
         } else {
-        console.error("invalid login token from eu server")
-          recieveEUServer.to(socket.id).emit("login_token_response"+msg.socketId, {
-            success: false,
-            error: "Invalid login token",
-          });
+          console.error("invalid login token from eu server");
+          recieveEUServer
+            .to(socket.id)
+            .emit("login_token_response" + msg.socketId, {
+              success: false,
+              error: "Invalid login token",
+            });
         }
       } else {
-        recieveEUServer.to(socket.id).emit("login_token_response"+msg.socketId, {
-          success: false,
-          error: "Failed to decrypt the login token",
-        });
+        recieveEUServer
+          .to(socket.id)
+          .emit("login_token_response" + msg.socketId, {
+            success: false,
+            error: "Failed to decrypt the login token",
+          });
         console.error(
           "Failed to decrypt the login token from EU server.",
           loginToken,

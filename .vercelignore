@@ -7,3 +7,5 @@ backend.js
 backend
 tokens.json
 backend/tokens.json
+hkmData.json
+deploy.sh

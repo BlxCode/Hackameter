@@ -1,9 +1,5 @@
 <script>
-  import {
-    hackatimeData,
-    apiRequest,
-    authenticated,
-  } from "./main.svelte";
+  import { hackatimeData, apiRequest, authenticated } from "./main.svelte";
   import { socket } from "./initiateSocket.svelte";
   const userName = $state({ data: "Username Not Found" });
   let { changeDashboard, currentDashboard } = $props();
@@ -11,13 +7,16 @@
   let imageSrc = $state(
     "https://www.blxm.me/_app/immutable/assets/kakaReder.Dh_f2OKQ.png",
   );
-$effect(() => {
+  $effect(() => {
     if (hackatimeData.simpleData.userName) {
       userName.data = hackatimeData.simpleData.userName;
       imageSrc = hackatimeData.simpleData.photo || imageSrc;
     }
   });
-  
+  function logout() {
+    sessionStorage.removeItem("loginToken");
+    location.reload();
+  }
 </script>
 
 <nav>
@@ -56,16 +55,31 @@ $effect(() => {
           onclick={(e) => changeDashboard("achievements")}>Achievements</a
         >
       </li>
-       <li>
-        <a
-          href=""
-          aria-current={currentDashboard === "bigGoals" ? "page" : "none"}
-          class={currentDashboard === "bigGoals" ? "outline" : ""}
-          onclick={(e) => changeDashboard("bigGoals")}>Big Goals</a
-        >
-      </li>
+      <section />
+      <section aria-label="HackaMeter Exclusives">
+        <small>HackaMeter Exclusives</small>
+
+        <li>
+          <a
+            href=""
+            aria-current={currentDashboard === "bigGoals" ? "page" : "none"}
+            class={currentDashboard === "bigGoals" ? "outline" : ""}
+            onclick={(e) => changeDashboard("bigGoals")}>Big Goals</a
+          >
+        </li>
+
+        <li>
+          <a
+            href=""
+            aria-current={currentDashboard === "settings" ? "page" : "none"}
+            class={currentDashboard === "settings" ? "outline" : ""}
+            onclick={(e) => changeDashboard("settings")}>Settings</a
+          >
+        </li>
+      </section>
     </ul>
   </section>
+ 
   <section
     aria-label="Options"
     id="portal-header-buttons"
@@ -73,8 +87,9 @@ $effect(() => {
   >
     <small>Options</small>
     <ul>
-      <li><button class="secondary">Settings</button></li>
-      <li><button class="outline secondary">Logout</button></li>
+      <li>
+        <button class="outline secondary" onclick={logout}>Logout</button>
+      </li>
     </ul>
   </section>
 </nav>
@@ -90,9 +105,22 @@ $effect(() => {
       display: none !important;
     }
   }
+  .li-link {
+margin-bottom: 0.01rem !important;
+  }
+  section[aria-label="Links"] {
+    margin-top: auto;
+  }
   nav {
     padding: 1rem;
     text-align: left;
+    height: 100%;
+    overflow-y: auto;
+    box-sizing: border-box;
+     display: flex; 
+    justify-content: flex-start;
+    flex-direction: column;
+    align-items: stretch;
   }
   nav a {
     cursor: pointer;

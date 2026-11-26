@@ -6,19 +6,21 @@
   import Header from "./header.svelte";
   import Dashboard from "./dashboard.svelte";
   import Achievements from "./achievements.svelte";
+  import NewBigGoals from "./newBigGoals.svelte";
   let menuClicked = $state(false);
   import ApiRequests from "./apiRequests.svelte";
   import { socket } from "./initiateSocket.svelte";
-  import {connected} from "./initiateSocket.svelte";
+  import { connected } from "./initiateSocket.svelte";
   import BigGoals from "./biggoals.svelte";
+  import Settings from "./settings.svelte";
   const Dashboards = {
     overview: Dashboard,
 
     achievements: Achievements,
     bigGoals: BigGoals,
+    settings: Settings,
   };
 
- 
   export const dashboardCurrentlyShown = $state({ data: "overview" });
   let currentDashboard = $state("overview");
   let DashboardToRender = $derived(Dashboards[currentDashboard]);
@@ -41,9 +43,6 @@
   // socket init
   console.log("Mounting socket connection...");
 
-
-
-
   // AUTHENTICATOR
   socket.on("auth_response", (data) => {
     if (data.success) {
@@ -56,15 +55,26 @@
     } else {
       authenticated.value = false;
       console.error("Authentication failed:", data.error);
-      if (data.error == "Invalid login token" || data.error == "Failed to decrypt the login token") {
-        sessionStorage.setItem("failedLoginTokenTimes",Number(sessionStorage.getItem("failedLoginTokenTimes") || 0) + 1);
+      if (
+        data.error == "Invalid login token" ||
+        data.error == "Failed to decrypt the login token"
+      ) {
+        sessionStorage.setItem(
+          "failedLoginTokenTimes",
+          Number(sessionStorage.getItem("failedLoginTokenTimes") || 0) + 1,
+        );
         sessionStorage.removeItem("loginToken");
         location.reload();
       }
-      if(sessionStorage.getItem("failedLoginTokenTimes") && Number(sessionStorage.getItem("failedLoginTokenTimes")) > 3){
+      if (
+        sessionStorage.getItem("failedLoginTokenTimes") &&
+        Number(sessionStorage.getItem("failedLoginTokenTimes")) > 3
+      ) {
         sessionStorage.removeItem("loginToken");
         sessionStorage.removeItem("failedLoginTokenTimes");
-        alert("Your login token has failed to authenticate multiple times. Please tell me via slack or smth. this bug shouldn't be encountered.");
+        alert(
+          "Your login token has failed to authenticate multiple times. Please tell me via slack or smth. this bug shouldn't be encountered.",
+        );
         location.reload();
       }
     }
@@ -122,12 +132,22 @@
   // responsive stuff
 </script>
 
-<dialog style="z-index: 1000;" open={!connected.value} id="dialog" role="dialog">
+<dialog
+  style="z-index: 1000;"
+  open={!connected.value}
+  id="dialog"
+  role="dialog"
+>
   <strong>Server has failed to connect. Notes: {socket}</strong>
 </dialog>
-<div id="popups">
-<div id = "backdrop" hidden></div>
-</div>
+<article class="secondary" id="popups">
+<button style="--pico-primary-background: oklch(0.55 0.2 25); --pico-primary-border: oklch(0.55 0.2 25); --pico-primary-hover-background: oklch(0.48 0.2 25); --pico-primary-hover-border: oklch(0.48 0.2 25);" id="closeButton">×</button>
+  <span>
+    <NewBigGoals />
+  </span>
+</article>
+  <div id="backdrop"></div>
+
 <div id="portal-container">
   <header style="padding: 0.5rem;" id="top">
     <Header bind:menuClicked />
@@ -154,25 +174,7 @@
       height: calc(100vh - 90px + 0.1rem);
       box-shadow: 2rem 0 1rem rgba(0, 0, 0, 0.1);
     }
-    #popups {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100vw;
-      height: 100vh;
-      z-index: 9999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999;
 
-
-    }
-    #backdrop {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100vw;
-      height: 100vh;
-      background-color: rgba(0, 0, 0, 0.5);
-      z-index:999;
-    }
     #portal-container {
       grid-template-areas:
         "header header"
@@ -192,6 +194,34 @@
       padding-left: 5%;
       padding-right: 5%;
     }
+  }
+#closeButton{
+  position:fixed;
+  top:0.5rem;
+  right:0.5rem;
+  z-index:10000;
+  width: 3rem;
+  height: 3rem;
+}
+  #popups {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 75vw;
+    height: 75vh;
+    z-index: 9999;
+    overflow-y: auto;
+  }
+  #backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background-color: rgba(0, 0, 0, 0.75);
+    z-index: 999;
+
   }
   #portal-container {
     overflow: hidden;
@@ -215,7 +245,7 @@
     border-right: 1px solid var(--pico-secondary-border);
     display: block;
     padding: 0.25rem;
-    z-index: 7666767674852375235;
+    z-index: 99;
   }
   header {
     grid-area: header;

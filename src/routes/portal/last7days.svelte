@@ -40,6 +40,7 @@
     typeof window !== "undefined" &&
       window.matchMedia("(prefers-color-scheme: dark)").matches,
   );
+  let highlightTextOnWeeklyTrend = $state("No Data Provided");
   $effect(() => {
     if (last7DaysTotal !== undefined && last7DaysTotal !== null) {
       trendIncreaseOrDecrease =
@@ -54,13 +55,24 @@
           trendColor = "var(--pico-card-background-color)";
           trendBorderColor = "var(--pico-card-border-color)";
         }
+        highlightTextOnWeeklyTrend = "Congrats!";
       } else if (trendIncreaseOrDecrease === "decrease") {
         if (Number(hackatimeData.simpleData.weeklyTrend) > 5) {
           trendColor = isDarkMode ? "#421D19" : "#FCEAE7";
           trendBorderColor = isDarkMode ? "#78372C" : "#E9B6AD";
+
+          const moreHoursNeeded = Math.abs(
+            ((hackatimeData.simpleData["lastWeekHours"] +
+              hackatimeData.simpleData["twoWeeksAgoHours"]) /
+              2 -
+              hackatimeData.simpleData["last7DaysTotal"]) /
+              3600,
+          ).toFixed(1);
+          highlightTextOnWeeklyTrend = `Code ${moreHoursNeeded} more hours to get back on track!`;
         } else {
           trendColor = "var(--pico-card-background-color)";
           trendBorderColor = "var(--pico-card-border-color)";
+          highlightTextOnWeeklyTrend = "Almost There!";
         }
       } else {
         trendColor = "var(--pico-card-background-color)";
@@ -96,7 +108,21 @@
     <p>Average Daily Time</p>
     <strong>{averageDailyTime || "No data available"}</strong>
   </article>
+
+  <article>
+    <p>Top Project</p>
+    <strong
+      >{hackatimeData.simpleData.last7DaysTopProject ||
+        "No data available"}</strong
+    ><br />
+    <small class="muted"
+      >{formatTime(hackatimeData.simpleData.last7DaysTopProjectTime) ||
+        "No data available"}</small
+    >
+  </article>
+
   <article
+    data-tooltip={highlightTextOnWeeklyTrend}
     style="  box-shadow:
       0 0 0 0.0625rem {trendBorderColor}33,
       0 0.0625rem 0.125rem 0 {trendBorderColor}22,

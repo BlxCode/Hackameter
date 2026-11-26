@@ -10,7 +10,7 @@
   <link rel="icon" href={STONKS} />
   <title>HackaMeter Portal</title>
 </svelte:head>
-<svelte:body />
+<svelte:body  />
 
 {@render children()}
 
@@ -18,5 +18,10 @@
   * {
     text-align: center;
     font-family: "Segoe UI", "Roboto", "Helvetica Neue", Arial, sans-serif;
+  }
+  body {
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
   }
 </style>

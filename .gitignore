@@ -29,3 +29,6 @@ backend/tokens.json
 .flaskenv*
 !.env.project
 !.env.vault
+
+hkmData.json
+deploy.sh

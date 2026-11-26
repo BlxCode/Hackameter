@@ -12,14 +12,15 @@ const twentyOneDaysAgoString = twentyOneDaysAgo.toISOString().split("T")[0];
 
 const apiUrls = {
   dashboard: [
-    "api/v1/users/{USER_ID}/stats?start_date=&end_date=&limit=1&features=&filter_by_project=&filter_by_category=&boundary_aware=true&total_seconds=true&no_ai_coding=false&test_param=false",
+    "api/v1/users/{USER_ID}/stats?start_date=&end_date=&limit=1&features=&boundary_aware=true&total_seconds=false&no_ai_coding=false&test_param=false",
     "api/hackatime/v1/users/{USER_ID}?api_key={WAKATIME_API_KEY}",
     "api/v1/authenticated/streak",
     "api/hackatime/v1/users/current/stats/last_7_days?api_key={YOUR_SECRET_TOKEN}",
     "api/hackatime/v1/users/{USER_ID}/statusbar/today?api_key={YOUR_SECRET_TOKEN}",
     "api/summary?start=&end=&user_id={USER_ID}",
-    "api/v1/authenticated/hours?start_date=${fourteenDaysAgoString}&end_date=${sevenDaysAgoString}",
-    "api/v1/authenticated/hours?start_date=${twentyOneDaysAgoString}&end_date=${fourteenDaysAgoString}",
+    "api/v1/authenticated/hours?start_date={fourteenDaysAgoString}&end_date={sevenDaysAgoString}",
+    "api/v1/authenticated/hours?start_date={twentyOneDaysAgoString}&end_date={fourteenDaysAgoString}",
+    "api/v1/users/{USER_ID}/projects/details?since=2010-09-01&until={TODAY}",
   ],
   aboutUser: ["api/v1/authenticated/me"],
 };
@@ -28,10 +29,13 @@ const stupidOutlierLists = {
   "api/v1/authenticated/streak": {
     authorization: "Bearer {YOUR_SECRET_TOKEN}",
   },
-  "api/v1/authenticated/hours?start_date=${fourteenDaysAgoString}&end_date=${sevenDaysAgoString}":
+  "api/v1/authenticated/hours?start_date={fourteenDaysAgoString}&end_date={sevenDaysAgoString}":
     { authorization: "Bearer {YOUR_SECRET_TOKEN}" },
-  "api/v1/authenticated/hours?start_date=${twentyOneDaysAgoString}&end_date=${fourteenDaysAgoString}":
+  "api/v1/authenticated/hours?start_date={twentyOneDaysAgoString}&end_date={fourteenDaysAgoString}":
     { authorization: "Bearer {YOUR_SECRET_TOKEN}" },
+  "api/v1/users/{USER_ID}/projects/details?since=2010-09-01&until={TODAY}": {
+    authorization: "Bearer {YOUR_SECRET_TOKEN}",
+  },
 };
 export async function getApis(clientInfo, apiName) {
   if (
@@ -49,20 +53,17 @@ export async function getApis(clientInfo, apiName) {
           .replace("{USER_ID}", clientInfo.userId)
           .replace("{fourteenDaysAgoString}", fourteenDaysAgoString)
           .replace("{sevenDaysAgoString}", sevenDaysAgoString)
-          .replace("{twentyOneDaysAgoString}", twentyOneDaysAgoString);
+          .replace("{twentyOneDaysAgoString}", twentyOneDaysAgoString)
+          .replace("{TODAY}", todayString);
         let authorizationHeader = `Bearer ${clientInfo.wakatimeApiKey}`;
 
         if (stupidOutlierLists[apiUrl]) {
           if (stupidOutlierLists[apiUrl].authorization) {
-            authorizationHeader = stupidOutlierLists[apiUrl].authorization
-              .replace("{YOUR_SECRET_TOKEN}", clientInfo.accessToken)
-              .replace("{WAKATIME_API_KEY}", clientInfo.wakatimeApiKey)
-              .replace("{USER_ID}", clientInfo.userId)
-              .replace("{fourteenDaysAgoString}", fourteenDaysAgoString)
-              .replace("{sevenDaysAgoString}", sevenDaysAgoString)
-              .replace("{twentyOneDaysAgoString}", twentyOneDaysAgoString);
+            authorizationHeader = stupidOutlierLists[apiUrl].authorization.replace("{YOUR_SECRET_TOKEN}", clientInfo.accessToken)
+             
           }
         }
+        console.log("realApiUrl:", realApiUrl,authorizationHeader);
         return fetch("https://hackatime.hackclub.com/" + realApiUrl, {
           headers: {
             Authorization: authorizationHeader,
@@ -97,6 +98,9 @@ export async function getApis(clientInfo, apiName) {
             details: result.details,
           };
         }
+      }
+      for(let i = 3; i < apiUrls[apiName].length; i++) {
+      delete apiDataFetched["api/v1/users/{USER_ID}/projects/details?since=2010-09-01&until={TODAY}"].projects[i]
       }
       return {
         status: "success",
