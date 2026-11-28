@@ -32,3 +32,6 @@ backend/tokens.json
 
 hkmData.json
 deploy.sh
+
+
+.vercelignore
